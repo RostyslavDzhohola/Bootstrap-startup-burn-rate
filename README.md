@@ -1,36 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Burn Rate Calculator
+
+Calculate your startup burn rate and runway. See how long your savings will last based on your expenses and income.
+
+## Features
+
+- **Public Calculator**: Calculate burn rate without signing in
+- **Save Scenarios**: Sign in to save your calculations and view a live countdown clock
+- **Multi-Currency Support**: Calculate in USD, EUR, GBP, THB, and more
 
 ## Getting Started
 
-First, run the development server:
-
+1. Install dependencies:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Set up environment variables in `.env.local`:
+```bash
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+TURSO_DATABASE_URL=libsql://...
+TURSO_AUTH_TOKEN=...
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Run database migrations:
+```bash
+pnpm db:generate
+pnpm db:migrate
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Start the development server:
+```bash
+pnpm dev
+```
 
-## Learn More
+5. Run tests:
+```bash
+pnpm test
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Tech Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Next.js 16** (App Router)
+- **Tailwind CSS 4**
+- **Clerk** (Authentication)
+- **Turso** (Serverless SQLite via libSQL)
+- **Drizzle ORM**
+- **Vitest** (Testing)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Database Setup
 
-## Deploy on Vercel
+The app uses Turso (serverless SQLite) for the database. In development, it falls back to a local SQLite file if Turso credentials are not provided.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+For production, connect your Turso database via the Vercel integration, which will automatically inject the required environment variables.
