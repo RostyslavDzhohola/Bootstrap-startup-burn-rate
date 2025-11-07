@@ -11,30 +11,35 @@ Calculate your startup burn rate and runway. See how long your savings will last
 ## Getting Started
 
 1. Install dependencies:
+
 ```bash
 pnpm install
 ```
 
 2. Set up environment variables in `.env.local`:
+
 ```bash
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
 CLERK_SECRET_KEY=sk_test_...
-TURSO_DATABASE_URL=libsql://...
-TURSO_AUTH_TOKEN=...
+BURNRATE_TURSO_DATABASE_URL=libsql://...
+BURNRATE_TURSO_AUTH_TOKEN=...
 ```
 
 3. Run database migrations:
+
 ```bash
 pnpm db:generate
 pnpm db:migrate
 ```
 
 4. Start the development server:
+
 ```bash
 pnpm dev
 ```
 
 5. Run tests:
+
 ```bash
 pnpm test
 ```

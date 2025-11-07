@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { db } from "@/lib/db";
+import { db, ensureDbMigrated } from "@/lib/db";
 import { scenarios, expenses, incomes } from "@/db/schema";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
@@ -11,6 +11,7 @@ const saveScenarioSchema = z.object({
   name: z.string().min(1),
   currency: z.string().default("USD"),
   startingCashCents: z.number().int().min(0),
+  city: z.string().trim().optional(),
   expenses: z.array(
     z.object({
       name: z.string().min(1),
@@ -26,6 +27,7 @@ const saveScenarioSchema = z.object({
 });
 
 export async function saveScenario(input: unknown) {
+  await ensureDbMigrated();
   const { userId } = await auth();
   if (!userId) {
     throw new Error("Unauthorized");
@@ -43,6 +45,7 @@ export async function saveScenario(input: unknown) {
     name: validated.name,
     currency: validated.currency,
     startingCashCents: validated.startingCashCents,
+    city: validated.city,
     createdAt: now,
     updatedAt: now,
   });
@@ -73,6 +76,7 @@ export async function saveScenario(input: unknown) {
 }
 
 export async function getScenario(id: string) {
+  await ensureDbMigrated();
   const { userId } = await auth();
   if (!userId) {
     throw new Error("Unauthorized");
@@ -104,4 +108,3 @@ export async function getScenario(id: string) {
     incomes: scenarioIncomes,
   };
 }
-

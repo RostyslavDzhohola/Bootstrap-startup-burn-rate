@@ -15,6 +15,18 @@ export function toDailyCents(monthlyCents: number): number {
 }
 
 /**
+ * Compute monthly burn rate in cents
+ * Monthly burn = max(expenses - income, 0)
+ */
+export function computeMonthlyBurnCents(
+  expensesMonthlyCents: number,
+  incomesMonthlyCents: number
+): number {
+  const netMonthlyCents = expensesMonthlyCents - incomesMonthlyCents;
+  return Math.max(netMonthlyCents, 0);
+}
+
+/**
  * Compute daily burn rate in cents
  * Daily burn = max(expenses - income, 0) / 30
  */
@@ -52,7 +64,8 @@ export function computeRunwayEndDate(
     return null;
   }
   const endDate = new Date(now);
-  endDate.setTime(endDate.getTime() + Math.floor(runwayDays) * 24 * 60 * 60 * 1000);
+  endDate.setTime(
+    endDate.getTime() + Math.floor(runwayDays) * 24 * 60 * 60 * 1000
+  );
   return endDate;
 }
-

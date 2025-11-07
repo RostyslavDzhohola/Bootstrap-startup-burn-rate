@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Note: Multiple lockfiles warning is informational and can be safely ignored
+  // Next.js will use the lockfile in the current directory
+  experimental: {
+    browserDebugInfoInTerminal: true,
+  },
 };
 
 export default nextConfig;

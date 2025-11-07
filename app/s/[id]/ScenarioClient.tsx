@@ -14,6 +14,7 @@ interface ScenarioPageProps {
     name: string;
     currency: string;
     startingCashCents: number;
+    city?: string | null;
     createdAt: string;
     expenses: Array<{ name: string; amountMonthlyCents: number }>;
     incomes: Array<{ name: string; amountMonthlyCents: number }>;
@@ -91,11 +92,16 @@ export default function ScenarioPage({ scenario }: ScenarioPageProps) {
     expensesMonthlyCents,
     incomesMonthlyCents
   );
+  const netMonthlyCents = expensesMonthlyCents - incomesMonthlyCents;
+  const netDailyCents = netMonthlyCents / 30;
+  const isProfitable = netMonthlyCents < 0;
+  const burnThresholdDailyCents = netMonthlyCents > 0 ? Math.round(netMonthlyCents / 30) : 0;
   const runwayDays = computeRunwayDays(
     scenario.startingCashCents,
     dailyBurnCents
   );
   const runwayEndDate = computeRunwayEndDate(new Date(), runwayDays);
+  const locationLabel = scenario.city?.trim() || "your plan";
 
   const formatCurrency = (cents: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -105,6 +111,36 @@ export default function ScenarioPage({ scenario }: ScenarioPageProps) {
     }).format(cents / 100);
   };
 
+  const goAllInGuidance = (() => {
+    if (isProfitable) {
+      return "Cash flow is positive. Going all-in is sustainable because each month adds to your reserves.";
+    }
+
+    if (netMonthlyCents === 0) {
+      return "You are breaking even. Going all-in means keeping a close eye on new costs to avoid slipping into burn.";
+    }
+
+    if (!isFinite(runwayDays) || runwayDays <= 0) {
+      return "You are out of runway. Hit pause on going all-in until you adjust expenses or unlock new income.";
+    }
+
+    const runwayMonths = runwayDays / 30;
+    if (runwayMonths >= 12) {
+      return "Runway exceeds a year. You can commit with confidence, but schedule quarterly reviews to track drift.";
+    }
+    if (runwayMonths >= 6) {
+      return "Runway covers roughly half a year. Going all-in is reasonable as long as you monitor hiring and large purchases.";
+    }
+    if (runwayMonths >= 3) {
+      return "You have about a quarter of runway. Proceed carefully—use this time to validate revenue growth or trim burn.";
+    }
+    return "Less than three months of runway. Focus on extending runway before taking bigger bets.";
+  })();
+
+  const activityGuidance = burnThresholdDailyCents === 0
+    ? "You are not burning cash today. Prioritize high-leverage growth bets instead of small cost cuts."
+    : `Activities must save at least ${formatCurrency(burnThresholdDailyCents)} per day to cancel today's burn. Cheaper tweaks will not move the runway.`;
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-8">
       <div>
@@ -112,6 +148,9 @@ export default function ScenarioPage({ scenario }: ScenarioPageProps) {
         <p className="text-gray-600 mt-2">
           Created {new Date(scenario.createdAt).toLocaleDateString()}
         </p>
+        {scenario.city && (
+          <p className="text-sm text-gray-500 mt-1">City focus: {scenario.city}</p>
+        )}
       </div>
 
       <div className="bg-red-50 border-2 border-red-200 p-8 rounded-lg">
@@ -123,11 +162,27 @@ export default function ScenarioPage({ scenario }: ScenarioPageProps) {
 
       <div className="bg-gray-50 p-6 rounded-lg space-y-4">
         <h2 className="text-xl font-semibold">Burn Rate Stats</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
-            <div className="text-sm text-gray-600">Daily Burn Rate</div>
+            <div className="text-sm text-gray-600">Net Cash Flow (Daily)</div>
+            <div className={`text-2xl font-bold ${isProfitable ? "text-green-600" : netDailyCents > 0 ? "text-red-600" : "text-gray-900"}`}>
+              {formatCurrency(Math.abs(netDailyCents))}
+              {isProfitable && <span className="ml-2 text-sm font-semibold text-green-600">profit</span>}
+            </div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Net Cash Flow (Monthly)</div>
+            <div className={`text-2xl font-bold ${isProfitable ? "text-green-600" : netMonthlyCents > 0 ? "text-red-600" : "text-gray-900"}`}>
+              {formatCurrency(Math.abs(netMonthlyCents))}
+              {isProfitable && <span className="ml-2 text-sm font-semibold text-green-600">profit</span>}
+            </div>
+          </div>
+          <div>
+            <div className="text-sm text-gray-600">Break-even activity (daily)</div>
             <div className="text-2xl font-bold">
-              {formatCurrency(dailyBurnCents)}
+              {burnThresholdDailyCents === 0
+                ? "No burn"
+                : formatCurrency(burnThresholdDailyCents)}
             </div>
           </div>
           <div>
@@ -136,6 +191,8 @@ export default function ScenarioPage({ scenario }: ScenarioPageProps) {
               {formatCurrency(scenario.startingCashCents)}
             </div>
           </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <div className="text-sm text-gray-600">Runway</div>
             <div className="text-2xl font-bold">
@@ -144,7 +201,30 @@ export default function ScenarioPage({ scenario }: ScenarioPageProps) {
                 : "∞ (No burn)"}
             </div>
           </div>
+          <div>
+            <div className="text-sm text-gray-600">Runway end date</div>
+            <div className="text-2xl font-bold">
+              {runwayEndDate
+                ? runwayEndDate.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })
+                : "Never"}
+            </div>
+          </div>
         </div>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg space-y-3 border border-gray-200">
+        <h2 className="text-xl font-semibold text-gray-900">Decision compass</h2>
+        <p className="text-sm text-gray-600">
+          <span className="font-semibold text-gray-900">Go all-in:</span> {goAllInGuidance}
+        </p>
+        <p className="text-sm text-gray-600">
+          <span className="font-semibold text-gray-900">Break-even activity budget:</span> {activityGuidance}
+        </p>
+        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Plan anchored in {locationLabel}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

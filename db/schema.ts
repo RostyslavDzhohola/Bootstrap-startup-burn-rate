@@ -6,6 +6,7 @@ export const scenarios = sqliteTable("scenarios", {
   name: text("name").notNull(),
   currency: text("currency").notNull().default("USD"),
   startingCashCents: integer("startingCashCents").notNull(),
+  city: text("city"),
   createdAt: text("createdAt").notNull(),
   updatedAt: text("updatedAt").notNull(),
 });
@@ -27,4 +28,3 @@ export const incomes = sqliteTable("incomes", {
   name: text("name").notNull(),
   amountMonthlyCents: integer("amountMonthlyCents").notNull(),
 });
-
