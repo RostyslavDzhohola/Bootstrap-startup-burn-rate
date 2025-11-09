@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
-import { getScenario } from "@/app/actions";
+import { getClock } from "@/app/actions";
 import ScenarioPage from "./ScenarioClient";
 
 export default async function ScenarioServerPage({
@@ -11,12 +11,12 @@ export default async function ScenarioServerPage({
   const { id } = await params;
   const { userId } = await auth();
 
-  let scenario;
+  let clock;
   try {
-    scenario = await getScenario(id);
+    clock = await getClock(id);
   } catch {
     redirect("/sign-in");
   }
 
-  return <ScenarioPage scenario={scenario} isSignedIn={!!userId} />;
+  return <ScenarioPage scenario={clock} isSignedIn={!!userId} />;
 }

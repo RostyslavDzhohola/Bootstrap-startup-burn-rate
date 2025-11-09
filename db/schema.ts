@@ -1,6 +1,6 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 
-export const scenarios = sqliteTable("scenarios", {
+export const clocks = sqliteTable("clocks", {
   id: text("id").primaryKey(),
   userId: text("userId"),
   name: text("name").notNull(),
@@ -8,22 +8,4 @@ export const scenarios = sqliteTable("scenarios", {
   runwayEndDate: text("runwayEndDate"),
   createdAt: text("createdAt").notNull(),
   updatedAt: text("updatedAt").notNull(),
-});
-
-export const expenses = sqliteTable("expenses", {
-  id: text("id").primaryKey(),
-  scenarioId: text("scenarioId")
-    .notNull()
-    .references(() => scenarios.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  amountMonthlyCents: integer("amountMonthlyCents").notNull(),
-});
-
-export const incomes = sqliteTable("incomes", {
-  id: text("id").primaryKey(),
-  scenarioId: text("scenarioId")
-    .notNull()
-    .references(() => scenarios.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  amountMonthlyCents: integer("amountMonthlyCents").notNull(),
 });

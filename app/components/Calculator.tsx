@@ -9,7 +9,7 @@ import {
   computeRunwayEndDate,
   sumMonthlyCents,
 } from "@/lib/calc";
-import { saveScenario } from "@/app/actions";
+import { saveClock } from "@/app/actions";
 import { Expense, Income } from "./calculator/types";
 import InputSection from "./calculator/InputSection";
 import ResultsSidebar from "./calculator/ResultsSidebar";
@@ -262,38 +262,10 @@ export default function Calculator() {
         ? runwayEndDate.toISOString()
         : undefined;
 
-      // Map expenses to schema format
-      const categoryLabels: Record<string, string> = {
-        rent: "Rent",
-        food: "Food",
-        internet: "Internet",
-        transportation: "Transportation",
-        miscellaneous: "Miscellaneous",
-      };
-
-      const mappedExpenses = expenses
-        .filter((exp) => exp.amountMonthlyCents > 0)
-        .map((exp) => ({
-          name: exp.customName || categoryLabels[exp.category] || exp.category,
-          amountMonthlyCents: exp.amountMonthlyCents,
-        }));
-
-      // Map incomes to schema format (filter out empty ones)
-      const mappedIncomes = incomes
-        .filter((inc) => inc.name.trim() && inc.amountMonthlyCents > 0)
-        .map((inc) => ({
-          name: inc.name.trim(),
-          amountMonthlyCents: inc.amountMonthlyCents,
-        }));
-
-      const result = await saveScenario({
+      const result = await saveClock({
         name: scenarioName,
-        currency: currency,
-        startingCashCents: startingCashCents,
         city: trimmedCity || undefined,
         runwayEndDate: endDateISO,
-        expenses: mappedExpenses,
-        incomes: mappedIncomes,
       });
 
       router.push(`/s/${result.id}`);

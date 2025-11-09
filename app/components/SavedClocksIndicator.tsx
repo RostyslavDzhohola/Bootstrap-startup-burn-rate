@@ -2,37 +2,41 @@
 
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FaClock } from "react-icons/fa";
-import { getUserScenarios } from "@/app/actions";
+import { getUserClocks } from "@/app/actions";
 
 export default function SavedClocksIndicator() {
   const { isSignedIn } = useUser();
+  const router = useRouter();
   const [scenarios, setScenarios] = useState<
     Array<{ id: string; name: string; runwayEndDate: string | null }>
   >([]);
-  const [showList, setShowList] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
     if (!isSignedIn) {
       return;
     }
 
-    const fetchScenarios = async () => {
-      setIsLoading(true);
+    const fetchClocks = async () => {
       try {
-        const userScenarios = await getUserScenarios();
-        setScenarios(userScenarios);
+        const userClocks = await getUserClocks();
+        setScenarios(userClocks);
       } catch (error) {
-        console.error("Failed to fetch scenarios:", error);
-      } finally {
-        setIsLoading(false);
+        console.error("Failed to fetch clocks:", error);
       }
     };
 
-    fetchScenarios();
+    fetchClocks();
   }, [isSignedIn]);
+
+  const handleClick = () => {
+    if (scenarios.length > 0) {
+      // Navigate to the most recent clock (first in the list)
+      router.push(`/s/${scenarios[0].id}`);
+    }
+  };
 
   if (!isSignedIn || scenarios.length === 0) {
     return null;
@@ -42,60 +46,20 @@ export default function SavedClocksIndicator() {
     <div className="fixed bottom-6 right-6 z-50">
       <div
         className="relative"
-        onMouseEnter={() => setShowList(true)}
-        onMouseLeave={() => setShowList(false)}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
       >
         <button
-          className="w-12 h-12 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+          onClick={handleClick}
+          className="w-12 h-12 rounded-full bg-slate-900 text-white shadow-lg transition-all flex items-center justify-center cursor-pointer"
           aria-label="Saved clocks"
         >
           <FaClock className="text-lg" />
         </button>
-
-        {showList && scenarios.length > 0 && (
-          <div className="absolute bottom-full right-0 mb-2 w-64 bg-white rounded-lg shadow-xl border border-slate-200 overflow-hidden">
-            <div className="p-3 bg-slate-50 border-b border-slate-200">
-              <div className="text-xs font-semibold text-slate-700 uppercase tracking-wider">
-                Saved Clocks
-              </div>
-            </div>
-            <div className="max-h-64 overflow-y-auto">
-              {isLoading ? (
-                <div className="p-4 text-center text-sm text-slate-500">
-                  Loading...
-                </div>
-              ) : scenarios.length === 0 ? (
-                <div className="p-4 text-center text-sm text-slate-500">
-                  No saved clocks
-                </div>
-              ) : (
-                <ul className="divide-y divide-slate-100">
-                  {scenarios.map((scenario) => (
-                    <li key={scenario.id}>
-                      <Link
-                        href={`/s/${scenario.id}`}
-                        className="block p-3 hover:bg-slate-50 transition-colors"
-                      >
-                        <div className="text-sm font-medium text-slate-900">
-                          {scenario.name}
-                        </div>
-                        {scenario.runwayEndDate && (
-                          <div className="text-xs text-slate-500 mt-1">
-                            {new Date(
-                              scenario.runwayEndDate
-                            ).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </div>
-                        )}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+        {showTooltip && (
+          <div className="absolute bottom-full right-0 mb-2 px-3 py-2 bg-slate-900 text-white text-sm rounded-lg shadow-lg whitespace-nowrap">
+            Go to your saved clock
+            <div className="absolute top-full right-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-slate-900"></div>
           </div>
         )}
       </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { FaInfoCircle, FaFire } from "react-icons/fa";
+import { FaInfoCircle } from "react-icons/fa";
 import toast from "react-hot-toast";
 import SavedClocksIndicator from "@/app/components/SavedClocksIndicator";
 
@@ -120,24 +120,17 @@ export default function ScenarioPage({
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-blue-50 flex flex-col">
-      {/* Minimal Header */}
-      <header className="flex items-center justify-between px-6 py-4 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
-        <div className="flex items-center">
-          <FaFire className="text-2xl text-red-600 drop-shadow-sm" />
-        </div>
-      </header>
-
+    <div className="h-[calc(100vh-4rem)] bg-linear-to-br from-slate-50 via-white to-blue-50 flex flex-col overflow-hidden">
       {/* Centered Countdown Timer */}
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
+      <div className="flex-1 flex items-center justify-center px-4 py-2">
         <div className="w-full max-w-4xl">
           <div className="relative">
             {/* Glow effect behind */}
             <div className="absolute inset-0 bg-linear-to-br from-red-600/20 via-orange-600/20 to-red-800/20 blur-3xl rounded-3xl -z-10"></div>
 
-            <div className="bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl p-6 sm:p-8 border-2 border-red-500/50 shadow-2xl">
-              <div className="text-center mb-4 relative">
-                <div className="text-xs sm:text-sm font-semibold text-red-400 uppercase tracking-wider mb-2">
+            <div className="bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl p-4 sm:p-6 border-2 border-red-500/50 shadow-2xl">
+              <div className="text-center mb-3 relative">
+                <div className="text-xs sm:text-sm font-semibold text-red-400 uppercase tracking-wider mb-1">
                   Time until bankruptcy
                 </div>
                 <div className="h-px bg-linear-to-r from-transparent via-red-500/50 to-transparent"></div>
@@ -159,7 +152,7 @@ export default function ScenarioPage({
                 </div>
               </div>
 
-              <div className="grid grid-cols-6 gap-3 sm:gap-4">
+              <div className="grid grid-cols-6 gap-2 sm:gap-3">
                 <div className="flex flex-col items-center">
                   <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
                     {countdownTime
@@ -248,7 +241,7 @@ export default function ScenarioPage({
 
               {/* Runway End Date */}
               {endDate && (
-                <div className="text-center mt-6">
+                <div className="text-center mt-4">
                   <div className="text-[10px] text-slate-400">
                     Runway ends:{" "}
                     {endDate.toLocaleDateString("en-US", {
@@ -261,7 +254,7 @@ export default function ScenarioPage({
               )}
 
               {/* Reset Clock Button */}
-              <div className="text-center mt-6">
+              <div className="text-center mt-4">
                 <button
                   onClick={handleResetClock}
                   className="inline-flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md active:scale-[0.98]"

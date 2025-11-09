@@ -2,171 +2,104 @@
 
 import { auth } from "@clerk/nextjs/server";
 import { db, ensureDbMigrated } from "@/lib/db";
-import { scenarios, expenses, incomes } from "@/db/schema";
+import { clocks } from "@/db/schema";
 import { z } from "zod";
 import { eq, desc } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
-const saveScenarioSchema = z.object({
+const saveClockSchema = z.object({
   name: z.string().min(1),
-  currency: z.string().default("USD"),
-  startingCashCents: z.number().int().min(0),
   city: z.string().trim().optional(),
   runwayEndDate: z.string().optional(),
-  expenses: z.array(
-    z.object({
-      name: z.string().min(1),
-      amountMonthlyCents: z.number().int().min(0),
-    })
-  ),
-  incomes: z.array(
-    z.object({
-      name: z.string().min(1),
-      amountMonthlyCents: z.number().int().min(0),
-    })
-  ),
 });
 
-export async function saveScenario(input: unknown) {
+export async function saveClock(input: unknown) {
   await ensureDbMigrated();
   const { userId } = await auth();
   if (!userId) {
     throw new Error("Unauthorized");
   }
 
-  const validated = saveScenarioSchema.parse(input);
-  const scenarioId = randomUUID();
+  const validated = saveClockSchema.parse(input);
+  const clockId = randomUUID();
   const now = new Date().toISOString();
 
-  // Delete all existing scenarios for this user to ensure only one clock at a time
-  // Cascade delete will automatically remove associated expenses and incomes
-  const existingScenarios = await db
-    .select({ id: scenarios.id })
-    .from(scenarios)
-    .where(eq(scenarios.userId, userId));
+  // Delete all existing clocks for this user to ensure only one clock at a time
+  const existingClocks = await db
+    .select({ id: clocks.id })
+    .from(clocks)
+    .where(eq(clocks.userId, userId));
 
-  for (const existing of existingScenarios) {
-    await db.delete(scenarios).where(eq(scenarios.id, existing.id));
+  for (const existing of existingClocks) {
+    await db.delete(clocks).where(eq(clocks.id, existing.id));
   }
 
-  // Insert new scenario and related items
-  await db.insert(scenarios).values({
-    id: scenarioId,
+  // Insert new clock
+  await db.insert(clocks).values({
+    id: clockId,
     userId,
     name: validated.name,
-    currency: validated.currency,
-    startingCashCents: validated.startingCashCents,
     city: validated.city,
     runwayEndDate: validated.runwayEndDate,
     createdAt: now,
     updatedAt: now,
   });
 
-  if (validated.expenses.length > 0) {
-    await db.insert(expenses).values(
-      validated.expenses.map((expense) => ({
-        id: randomUUID(),
-        scenarioId,
-        name: expense.name,
-        amountMonthlyCents: expense.amountMonthlyCents,
-      }))
-    );
-  }
-
-  if (validated.incomes.length > 0) {
-    await db.insert(incomes).values(
-      validated.incomes.map((income) => ({
-        id: randomUUID(),
-        scenarioId,
-        name: income.name,
-        amountMonthlyCents: income.amountMonthlyCents,
-      }))
-    );
-  }
-
-  return { id: scenarioId };
+  return { id: clockId };
 }
 
-export async function getScenario(id: string) {
+export async function getClock(id: string) {
   await ensureDbMigrated();
   const { userId } = await auth();
   if (!userId) {
     throw new Error("Unauthorized");
   }
 
-  const [scenario] = await db
+  const [clock] = await db
     .select()
-    .from(scenarios)
-    .where(eq(scenarios.id, id))
+    .from(clocks)
+    .where(eq(clocks.id, id))
     .limit(1);
 
-  if (!scenario || scenario.userId !== userId) {
-    throw new Error("Scenario not found");
+  if (!clock || clock.userId !== userId) {
+    throw new Error("Clock not found");
   }
 
-  const scenarioExpenses = await db
-    .select()
-    .from(expenses)
-    .where(eq(expenses.scenarioId, id));
-
-  const scenarioIncomes = await db
-    .select()
-    .from(incomes)
-    .where(eq(incomes.scenarioId, id));
-
-  return {
-    ...scenario,
-    expenses: scenarioExpenses,
-    incomes: scenarioIncomes,
-  };
+  return clock;
 }
 
-export async function getPublicScenario(id: string) {
+export async function getPublicClock(id: string) {
   await ensureDbMigrated();
 
-  const [scenario] = await db
+  const [clock] = await db
     .select()
-    .from(scenarios)
-    .where(eq(scenarios.id, id))
+    .from(clocks)
+    .where(eq(clocks.id, id))
     .limit(1);
 
-  if (!scenario) {
-    throw new Error("Scenario not found");
+  if (!clock) {
+    throw new Error("Clock not found");
   }
 
-  const scenarioExpenses = await db
-    .select()
-    .from(expenses)
-    .where(eq(expenses.scenarioId, id));
-
-  const scenarioIncomes = await db
-    .select()
-    .from(incomes)
-    .where(eq(incomes.scenarioId, id));
-
-  return {
-    ...scenario,
-    expenses: scenarioExpenses,
-    incomes: scenarioIncomes,
-  };
+  return clock;
 }
 
-export async function getUserScenarios() {
+export async function getUserClocks() {
   await ensureDbMigrated();
   const { userId } = await auth();
   if (!userId) {
     throw new Error("Unauthorized");
   }
 
-  const userScenarios = await db
+  const userClocks = await db
     .select({
-      id: scenarios.id,
-      name: scenarios.name,
-      runwayEndDate: scenarios.runwayEndDate,
+      id: clocks.id,
+      name: clocks.name,
+      runwayEndDate: clocks.runwayEndDate,
     })
-    .from(scenarios)
-    .where(eq(scenarios.userId, userId))
-    .orderBy(desc(scenarios.createdAt));
+    .from(clocks)
+    .where(eq(clocks.userId, userId))
+    .orderBy(desc(clocks.createdAt));
 
-  return userScenarios;
+  return userClocks;
 }
