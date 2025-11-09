@@ -4,9 +4,8 @@ export const scenarios = sqliteTable("scenarios", {
   id: text("id").primaryKey(),
   userId: text("userId"),
   name: text("name").notNull(),
-  currency: text("currency").notNull().default("USD"),
-  startingCashCents: integer("startingCashCents").notNull(),
   city: text("city"),
+  runwayEndDate: text("runwayEndDate"),
   createdAt: text("createdAt").notNull(),
   updatedAt: text("updatedAt").notNull(),
 });

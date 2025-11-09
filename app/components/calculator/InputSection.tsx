@@ -52,14 +52,18 @@ export default function InputSection({
                 type="number"
                 step="1"
                 min="0"
-                value={startingCash === "0" || startingCash === "" ? "" : startingCash}
+                value={
+                  startingCash === "0" || startingCash === ""
+                    ? ""
+                    : startingCash
+                }
                 onChange={(e) => {
                   const val = e.target.value;
                   if (val === "" || parseFloat(val) >= 0) {
                     setStartingCash(val);
                   }
                 }}
-                onFocus={(e) => {
+                onFocus={() => {
                   if (startingCash === "0") {
                     setStartingCash("");
                   }
@@ -128,7 +132,7 @@ export default function InputSection({
             </button>
           </div>
         </div>
-        
+
         {expenseMode === "total" ? (
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-700">
@@ -142,14 +146,18 @@ export default function InputSection({
                 type="number"
                 step="1"
                 min="0"
-                value={totalExpense === "0" || totalExpense === "" ? "" : totalExpense}
+                value={
+                  totalExpense === "0" || totalExpense === ""
+                    ? ""
+                    : totalExpense
+                }
                 onChange={(e) => {
                   const val = e.target.value;
                   if (val === "" || parseFloat(val) >= 0) {
                     setTotalExpense(val);
                   }
                 }}
-                onFocus={(e) => {
+                onFocus={() => {
                   if (totalExpense === "0") {
                     setTotalExpense("");
                   }
@@ -169,8 +177,9 @@ export default function InputSection({
                 transportation: "Transportation",
                 miscellaneous: "Miscellaneous",
               };
-              const label = categoryLabels[expense.category] || expense.category;
-              
+              const label =
+                categoryLabels[expense.category] || expense.category;
+
               return (
                 <div key={idx} className="space-y-2">
                   <label className="block text-sm font-medium text-slate-700">
@@ -184,13 +193,19 @@ export default function InputSection({
                       type="number"
                       step="1"
                       min="0"
-                      value={expense.amountMonthlyCents === 0 ? "" : expense.amountMonthlyCents / 100}
+                      value={
+                        expense.amountMonthlyCents === 0
+                          ? ""
+                          : expense.amountMonthlyCents / 100
+                      }
                       onChange={(e) => {
                         const val = e.target.value;
                         const numVal = parseFloat(val || "0");
                         if (val === "" || numVal >= 0) {
                           const newExpenses = [...expenses];
-                          newExpenses[idx].amountMonthlyCents = Math.round(numVal * 100);
+                          newExpenses[idx].amountMonthlyCents = Math.round(
+                            numVal * 100
+                          );
                           setExpenses(newExpenses);
                         }
                       }}
@@ -223,7 +238,9 @@ export default function InputSection({
         {incomes.length === 0 && (
           <div className="text-center py-8 text-slate-400">
             <p className="text-sm">No income sources added yet.</p>
-            <p className="text-xs mt-1">Click "+ Add Income" to get started.</p>
+            <p className="text-xs mt-1">
+              Click &quot;+ Add Income&quot; to get started.
+            </p>
           </div>
         )}
         <div className="space-y-3">
@@ -248,13 +265,19 @@ export default function InputSection({
                   type="number"
                   step="1"
                   min="0"
-                  value={income.amountMonthlyCents === 0 ? "" : income.amountMonthlyCents / 100}
+                  value={
+                    income.amountMonthlyCents === 0
+                      ? ""
+                      : income.amountMonthlyCents / 100
+                  }
                   onChange={(e) => {
                     const val = e.target.value;
                     const numVal = parseFloat(val || "0");
                     if (val === "" || numVal >= 0) {
                       const newIncomes = [...incomes];
-                      newIncomes[idx].amountMonthlyCents = Math.round(numVal * 100);
+                      newIncomes[idx].amountMonthlyCents = Math.round(
+                        numVal * 100
+                      );
                       setIncomes(newIncomes);
                     }
                   }}
@@ -280,4 +303,3 @@ export default function InputSection({
     </div>
   );
 }
-

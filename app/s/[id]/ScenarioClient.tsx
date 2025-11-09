@@ -1,288 +1,281 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  computeDailyBurnCents,
-  computeRunwayDays,
-  computeRunwayEndDate,
-  sumMonthlyCents,
-} from "@/lib/calc";
+import { useEffect, useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { FaInfoCircle, FaFire } from "react-icons/fa";
+import toast from "react-hot-toast";
+import SavedClocksIndicator from "@/app/components/SavedClocksIndicator";
 
 interface ScenarioPageProps {
   scenario: {
     id: string;
     name: string;
-    currency: string;
-    startingCashCents: number;
     city?: string | null;
+    runwayEndDate: string | null;
     createdAt: string;
-    expenses: Array<{ name: string; amountMonthlyCents: number }>;
-    incomes: Array<{ name: string; amountMonthlyCents: number }>;
   };
+  isSignedIn: boolean;
 }
 
-function Countdown({ endDate }: { endDate: Date | null }) {
-  const [timeLeft, setTimeLeft] = useState<{
+export default function ScenarioPage({
+  scenario,
+  isSignedIn,
+}: ScenarioPageProps) {
+  const router = useRouter();
+  const [countdownTime, setCountdownTime] = useState<{
+    years: number;
+    months: number;
     days: number;
     hours: number;
     minutes: number;
     seconds: number;
   } | null>(null);
+  const [showTooltip, setShowTooltip] = useState(false);
 
+  // Parse saved runway end date from database - memoized to prevent infinite loops
+  const endDate = useMemo(() => {
+    if (!scenario.runwayEndDate) return null;
+    const date = new Date(scenario.runwayEndDate);
+    return isNaN(date.getTime()) ? null : date;
+  }, [scenario.runwayEndDate]);
+
+  // Show toast notification if user is signed in and scenario doesn't have end date
+  useEffect(() => {
+    if (isSignedIn && !endDate) {
+      toast.error(
+        "Please create a new clock by entering your information and saving it",
+        {
+          duration: 5000,
+        }
+      );
+    }
+  }, [isSignedIn, endDate]);
+
+  // Update countdown every second
   useEffect(() => {
     if (!endDate) {
-      setTimeLeft(null);
-      return;
+      // Clear countdown when endDate becomes null - use setTimeout to avoid synchronous setState
+      const timeoutId = setTimeout(() => {
+        setCountdownTime(null);
+      }, 0);
+      return () => clearTimeout(timeoutId);
     }
 
-    const update = () => {
-      const now = new Date();
-      const diff = endDate.getTime() - now.getTime();
+    const updateCountdown = () => {
+      const now = new Date().getTime();
+      const endTime = endDate.getTime();
 
-      if (diff <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      // Validate dates
+      if (isNaN(now) || isNaN(endTime)) {
+        setCountdownTime({
+          years: 0,
+          months: 0,
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
+        });
         return;
       }
 
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      const diff = endTime - now;
 
-      setTimeLeft({ days, hours, minutes, seconds });
+      if (diff <= 0) {
+        setCountdownTime({
+          years: 0,
+          months: 0,
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
+        });
+        return;
+      }
+
+      const totalSeconds = Math.floor(diff / 1000);
+      const totalMinutes = Math.floor(totalSeconds / 60);
+      const totalHours = Math.floor(totalMinutes / 60);
+      const totalDays = Math.floor(totalHours / 24);
+      const totalMonths = Math.floor(totalDays / 30);
+      const totalYears = Math.floor(totalMonths / 12);
+
+      setCountdownTime({
+        years: isNaN(totalYears) ? 0 : totalYears,
+        months: isNaN(totalMonths % 12) ? 0 : totalMonths % 12,
+        days: isNaN(totalDays % 30) ? 0 : totalDays % 30,
+        hours: isNaN(totalHours % 24) ? 0 : totalHours % 24,
+        minutes: isNaN(totalMinutes % 60) ? 0 : totalMinutes % 60,
+        seconds: isNaN(totalSeconds % 60) ? 0 : totalSeconds % 60,
+      });
     };
 
-    update();
-    const interval = setInterval(update, 1000);
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
 
     return () => clearInterval(interval);
   }, [endDate]);
 
-  if (!endDate || !timeLeft) {
-    return (
-      <div className="text-4xl font-bold text-green-600">∞ No burn rate</div>
-    );
-  }
-
-  if (timeLeft.days === 0 && timeLeft.hours === 0 && timeLeft.minutes === 0 && timeLeft.seconds === 0) {
-    return (
-      <div className="text-4xl font-bold text-red-600">Time's up!</div>
-    );
-  }
-
-  return (
-    <div className="text-center space-y-4">
-      <div className="text-6xl font-bold text-red-600">
-        {String(timeLeft.days).padStart(2, "0")}:
-        {String(timeLeft.hours).padStart(2, "0")}:
-        {String(timeLeft.minutes).padStart(2, "0")}:
-        {String(timeLeft.seconds).padStart(2, "0")}
-      </div>
-      <div className="text-sm text-gray-600">
-        Days : Hours : Minutes : Seconds
-      </div>
-    </div>
-  );
-}
-
-export default function ScenarioPage({ scenario }: ScenarioPageProps) {
-  const expensesMonthlyCents = sumMonthlyCents(scenario.expenses);
-  const incomesMonthlyCents = sumMonthlyCents(scenario.incomes);
-  const dailyBurnCents = computeDailyBurnCents(
-    expensesMonthlyCents,
-    incomesMonthlyCents
-  );
-  const netMonthlyCents = expensesMonthlyCents - incomesMonthlyCents;
-  const netDailyCents = netMonthlyCents / 30;
-  const isProfitable = netMonthlyCents < 0;
-  const burnThresholdDailyCents = netMonthlyCents > 0 ? Math.round(netMonthlyCents / 30) : 0;
-  const runwayDays = computeRunwayDays(
-    scenario.startingCashCents,
-    dailyBurnCents
-  );
-  const runwayEndDate = computeRunwayEndDate(new Date(), runwayDays);
-  const locationLabel = scenario.city?.trim() || "your plan";
-
-  const formatCurrency = (cents: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: scenario.currency,
-      minimumFractionDigits: 2,
-    }).format(cents / 100);
+  const handleResetClock = () => {
+    router.push("/");
   };
 
-  const goAllInGuidance = (() => {
-    if (isProfitable) {
-      return "Cash flow is positive. Going all-in is sustainable because each month adds to your reserves.";
-    }
-
-    if (netMonthlyCents === 0) {
-      return "You are breaking even. Going all-in means keeping a close eye on new costs to avoid slipping into burn.";
-    }
-
-    if (!isFinite(runwayDays) || runwayDays <= 0) {
-      return "You are out of runway. Hit pause on going all-in until you adjust expenses or unlock new income.";
-    }
-
-    const runwayMonths = runwayDays / 30;
-    if (runwayMonths >= 12) {
-      return "Runway exceeds a year. You can commit with confidence, but schedule quarterly reviews to track drift.";
-    }
-    if (runwayMonths >= 6) {
-      return "Runway covers roughly half a year. Going all-in is reasonable as long as you monitor hiring and large purchases.";
-    }
-    if (runwayMonths >= 3) {
-      return "You have about a quarter of runway. Proceed carefully—use this time to validate revenue growth or trim burn.";
-    }
-    return "Less than three months of runway. Focus on extending runway before taking bigger bets.";
-  })();
-
-  const activityGuidance = burnThresholdDailyCents === 0
-    ? "You are not burning cash today. Prioritize high-leverage growth bets instead of small cost cuts."
-    : `Activities must save at least ${formatCurrency(burnThresholdDailyCents)} per day to cancel today's burn. Cheaper tweaks will not move the runway.`;
-
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">{scenario.name}</h1>
-        <p className="text-gray-600 mt-2">
-          Created {new Date(scenario.createdAt).toLocaleDateString()}
-        </p>
-        {scenario.city && (
-          <p className="text-sm text-gray-500 mt-1">City focus: {scenario.city}</p>
-        )}
-      </div>
-
-      <div className="bg-red-50 border-2 border-red-200 p-8 rounded-lg">
-        <h2 className="text-xl font-semibold mb-4 text-center">
-          Time Until You're Broke
-        </h2>
-        <Countdown endDate={runwayEndDate} />
-      </div>
-
-      <div className="bg-gray-50 p-6 rounded-lg space-y-4">
-        <h2 className="text-xl font-semibold">Burn Rate Stats</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <div className="text-sm text-gray-600">Net Cash Flow (Daily)</div>
-            <div className={`text-2xl font-bold ${isProfitable ? "text-green-600" : netDailyCents > 0 ? "text-red-600" : "text-gray-900"}`}>
-              {formatCurrency(Math.abs(netDailyCents))}
-              {isProfitable && <span className="ml-2 text-sm font-semibold text-green-600">profit</span>}
-            </div>
-          </div>
-          <div>
-            <div className="text-sm text-gray-600">Net Cash Flow (Monthly)</div>
-            <div className={`text-2xl font-bold ${isProfitable ? "text-green-600" : netMonthlyCents > 0 ? "text-red-600" : "text-gray-900"}`}>
-              {formatCurrency(Math.abs(netMonthlyCents))}
-              {isProfitable && <span className="ml-2 text-sm font-semibold text-green-600">profit</span>}
-            </div>
-          </div>
-          <div>
-            <div className="text-sm text-gray-600">Break-even activity (daily)</div>
-            <div className="text-2xl font-bold">
-              {burnThresholdDailyCents === 0
-                ? "No burn"
-                : formatCurrency(burnThresholdDailyCents)}
-            </div>
-          </div>
-          <div>
-            <div className="text-sm text-gray-600">Starting Cash</div>
-            <div className="text-2xl font-bold">
-              {formatCurrency(scenario.startingCashCents)}
-            </div>
-          </div>
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-blue-50 flex flex-col">
+      {/* Minimal Header */}
+      <header className="flex items-center justify-between px-6 py-4 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
+        <div className="flex items-center">
+          <FaFire className="text-2xl text-red-600 drop-shadow-sm" />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <div className="text-sm text-gray-600">Runway</div>
-            <div className="text-2xl font-bold">
-              {isFinite(runwayDays)
-                ? `${Math.floor(runwayDays)} days`
-                : "∞ (No burn)"}
-            </div>
-          </div>
-          <div>
-            <div className="text-sm text-gray-600">Runway end date</div>
-            <div className="text-2xl font-bold">
-              {runwayEndDate
-                ? runwayEndDate.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })
-                : "Never"}
-            </div>
-          </div>
-        </div>
-      </div>
+      </header>
 
-      <div className="bg-white p-6 rounded-lg space-y-3 border border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-900">Decision compass</h2>
-        <p className="text-sm text-gray-600">
-          <span className="font-semibold text-gray-900">Go all-in:</span> {goAllInGuidance}
-        </p>
-        <p className="text-sm text-gray-600">
-          <span className="font-semibold text-gray-900">Break-even activity budget:</span> {activityGuidance}
-        </p>
-        <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Plan anchored in {locationLabel}</p>
-      </div>
+      {/* Centered Countdown Timer */}
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-4xl">
+          <div className="relative">
+            {/* Glow effect behind */}
+            <div className="absolute inset-0 bg-linear-to-br from-red-600/20 via-orange-600/20 to-red-800/20 blur-3xl rounded-3xl -z-10"></div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Expenses</h3>
-          <div className="space-y-2">
-            {scenario.expenses.length === 0 ? (
-              <p className="text-gray-500">No expenses</p>
-            ) : (
-              scenario.expenses.map((expense, idx) => (
-                <div
-                  key={idx}
-                  className="flex justify-between p-3 bg-white rounded border"
-                >
-                  <span>{expense.name}</span>
-                  <span className="font-medium">
-                    {formatCurrency(expense.amountMonthlyCents)}/mo
-                  </span>
+            <div className="bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl p-6 sm:p-8 border-2 border-red-500/50 shadow-2xl">
+              <div className="text-center mb-4 relative">
+                <div className="text-xs sm:text-sm font-semibold text-red-400 uppercase tracking-wider mb-2">
+                  Time until bankruptcy
                 </div>
-              ))
-            )}
-          </div>
-          <div className="mt-4 pt-4 border-t">
-            <div className="flex justify-between font-bold">
-              <span>Total Expenses</span>
-              <span>{formatCurrency(expensesMonthlyCents)}/mo</span>
-            </div>
-          </div>
-        </div>
+                <div className="h-px bg-linear-to-r from-transparent via-red-500/50 to-transparent"></div>
 
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Income</h3>
-          <div className="space-y-2">
-            {scenario.incomes.length === 0 ? (
-              <p className="text-gray-500">No income</p>
-            ) : (
-              scenario.incomes.map((income, idx) => (
-                <div
-                  key={idx}
-                  className="flex justify-between p-3 bg-white rounded border"
-                >
-                  <span>{income.name}</span>
-                  <span className="font-medium">
-                    {formatCurrency(income.amountMonthlyCents)}/mo
-                  </span>
+                {/* Info Icon with Tooltip */}
+                <div className="absolute top-0 right-0">
+                  <div
+                    className="relative"
+                    onMouseEnter={() => setShowTooltip(true)}
+                    onMouseLeave={() => setShowTooltip(false)}
+                  >
+                    <FaInfoCircle className="text-red-400/70 hover:text-red-400 cursor-help text-sm" />
+                    {showTooltip && (
+                      <div className="absolute right-0 top-6 w-48 bg-slate-800 text-white text-xs p-2 rounded shadow-lg z-10 border border-slate-700">
+                        Save this page as your homepage to get reminders
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ))
-            )}
-          </div>
-          <div className="mt-4 pt-4 border-t">
-            <div className="flex justify-between font-bold">
-              <span>Total Income</span>
-              <span>{formatCurrency(incomesMonthlyCents)}/mo</span>
+              </div>
+
+              <div className="grid grid-cols-6 gap-3 sm:gap-4">
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
+                    {countdownTime
+                      ? isNaN(countdownTime.years)
+                        ? 0
+                        : countdownTime.years
+                      : 0}
+                  </div>
+                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                    Years
+                  </div>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
+                    {countdownTime
+                      ? isNaN(countdownTime.months)
+                        ? 0
+                        : countdownTime.months
+                      : 0}
+                  </div>
+                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                    Months
+                  </div>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
+                    {countdownTime
+                      ? isNaN(countdownTime.days)
+                        ? 0
+                        : countdownTime.days
+                      : 0}
+                  </div>
+                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                    Days
+                  </div>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
+                    {String(
+                      countdownTime
+                        ? isNaN(countdownTime.hours)
+                          ? 0
+                          : countdownTime.hours
+                        : 0
+                    ).padStart(2, "0")}
+                  </div>
+                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                    Hours
+                  </div>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
+                    {String(
+                      countdownTime
+                        ? isNaN(countdownTime.minutes)
+                          ? 0
+                          : countdownTime.minutes
+                        : 0
+                    ).padStart(2, "0")}
+                  </div>
+                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                    Minutes
+                  </div>
+                </div>
+                <div className="flex flex-col items-center">
+                  <div
+                    className={`text-3xl sm:text-4xl md:text-5xl font-bold mb-1 tabular-nums ${
+                      countdownTime
+                        ? "text-red-400 animate-pulse"
+                        : "text-white"
+                    }`}
+                  >
+                    {String(
+                      countdownTime
+                        ? isNaN(countdownTime.seconds)
+                          ? 0
+                          : countdownTime.seconds
+                        : 0
+                    ).padStart(2, "0")}
+                  </div>
+                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                    Seconds
+                  </div>
+                </div>
+              </div>
+
+              {/* Runway End Date */}
+              {endDate && (
+                <div className="text-center mt-6">
+                  <div className="text-[10px] text-slate-400">
+                    Runway ends:{" "}
+                    {endDate.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Reset Clock Button */}
+              <div className="text-center mt-6">
+                <button
+                  onClick={handleResetClock}
+                  className="inline-flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
+                >
+                  Reset clock
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Saved Clocks Indicator */}
+      <SavedClocksIndicator />
     </div>
   );
 }
-

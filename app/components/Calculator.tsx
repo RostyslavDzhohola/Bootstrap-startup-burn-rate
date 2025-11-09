@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import {
   computeDailyBurnCents,
-  computeMonthlyBurnCents,
   computeRunwayDays,
   computeRunwayEndDate,
   sumMonthlyCents,
@@ -15,6 +14,7 @@ import { Expense, Income } from "./calculator/types";
 import InputSection from "./calculator/InputSection";
 import ResultsSidebar from "./calculator/ResultsSidebar";
 import LandingSections from "./calculator/LandingSections";
+import SavedClocksIndicator from "./SavedClocksIndicator";
 
 export default function Calculator() {
   const { isSignedIn } = useUser();
@@ -49,10 +49,6 @@ export default function Calculator() {
     () => sumMonthlyCents(incomes),
     [incomes]
   );
-  const monthlyBurnCents = useMemo(
-    () => computeMonthlyBurnCents(expensesMonthlyCents, incomesMonthlyCents),
-    [expensesMonthlyCents, incomesMonthlyCents]
-  );
   const dailyBurnCents = useMemo(
     () => computeDailyBurnCents(expensesMonthlyCents, incomesMonthlyCents),
     [expensesMonthlyCents, incomesMonthlyCents]
@@ -63,10 +59,6 @@ export default function Calculator() {
   );
   const netDailyCents = useMemo(() => netMonthlyCents / 30, [netMonthlyCents]);
   const isProfitable = netMonthlyCents < 0;
-  const burnThresholdDailyCents = useMemo(
-    () => (monthlyBurnCents > 0 ? Math.round(monthlyBurnCents / 30) : 0),
-    [monthlyBurnCents]
-  );
   const startingCashCents = useMemo(() => {
     const parsed = parseFloat(startingCash);
     return isNaN(parsed) ? 0 : Math.round(parsed * 100);
@@ -80,13 +72,16 @@ export default function Calculator() {
     [runwayDays]
   );
 
-  const formatCurrency = (cents: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: currency,
-      minimumFractionDigits: 2,
-    }).format(cents / 100);
-  };
+  const formatCurrency = useCallback(
+    (cents: number) => {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: currency,
+        minimumFractionDigits: 2,
+      }).format(cents / 100);
+    },
+    [currency]
+  );
 
   const trimmedCity = city.trim();
   const locationLabel = trimmedCity || "your current plan";
@@ -195,7 +190,7 @@ export default function Calculator() {
     netMonthlyCents,
     runwayDays,
     locationLabel,
-    currency,
+    formatCurrency,
     startingCashCents,
     expensesMonthlyCents,
     incomesMonthlyCents,
@@ -250,16 +245,6 @@ export default function Calculator() {
     return "critical" as const;
   }, [isProfitable, runwayDays]);
 
-  const activityGuidance = useMemo(() => {
-    if (burnThresholdDailyCents === 0) {
-      return "You are not burning cash today. Prioritize high-leverage growth bets instead of small cost cuts.";
-    }
-
-    return `Activities must save at least ${formatCurrency(
-      burnThresholdDailyCents
-    )} per day to cancel today's burn. Cheaper tweaks will not move the runway.`;
-  }, [burnThresholdDailyCents, currency]);
-
   const handleSave = async () => {
     if (!isSignedIn) {
       router.push("/sign-in");
@@ -268,50 +253,47 @@ export default function Calculator() {
 
     setIsSaving(true);
     try {
-      let filteredExpenses;
-      if (expenseMode === "total") {
-        const totalExpenseCents = totalExpense
-          ? Math.round(parseFloat(totalExpense) * 100)
-          : 0;
-        filteredExpenses =
-          totalExpenseCents > 0
-            ? [
-                {
-                  name: "Total Expenses",
-                  amountMonthlyCents: totalExpenseCents,
-                },
-              ]
-            : [];
-      } else {
-        const categoryLabels: Record<string, string> = {
-          rent: "Rent",
-          food: "Food",
-          internet: "Internet",
-          transportation: "Transportation",
-          miscellaneous: "Miscellaneous",
-        };
-        filteredExpenses = expenses
-          .filter((e) => e.category && e.amountMonthlyCents > 0)
-          .map((e) => ({
-            name: categoryLabels[e.category] || e.category,
-            amountMonthlyCents: e.amountMonthlyCents,
-          }));
-      }
-      const filteredIncomes = incomes.filter(
-        (i) => i.name.trim() && i.amountMonthlyCents > 0
-      );
-
       const scenarioName = trimmedCity
         ? `Runway - ${trimmedCity}`
         : `Burn Rate Scenario - ${new Date().toLocaleDateString()}`;
 
+      // Calculate and save runway end date
+      const endDateISO = runwayEndDate
+        ? runwayEndDate.toISOString()
+        : undefined;
+
+      // Map expenses to schema format
+      const categoryLabels: Record<string, string> = {
+        rent: "Rent",
+        food: "Food",
+        internet: "Internet",
+        transportation: "Transportation",
+        miscellaneous: "Miscellaneous",
+      };
+
+      const mappedExpenses = expenses
+        .filter((exp) => exp.amountMonthlyCents > 0)
+        .map((exp) => ({
+          name: exp.customName || categoryLabels[exp.category] || exp.category,
+          amountMonthlyCents: exp.amountMonthlyCents,
+        }));
+
+      // Map incomes to schema format (filter out empty ones)
+      const mappedIncomes = incomes
+        .filter((inc) => inc.name.trim() && inc.amountMonthlyCents > 0)
+        .map((inc) => ({
+          name: inc.name.trim(),
+          amountMonthlyCents: inc.amountMonthlyCents,
+        }));
+
       const result = await saveScenario({
         name: scenarioName,
-        currency,
-        startingCashCents,
+        currency: currency,
+        startingCashCents: startingCashCents,
         city: trimmedCity || undefined,
-        expenses: filteredExpenses,
-        incomes: filteredIncomes,
+        runwayEndDate: endDateISO,
+        expenses: mappedExpenses,
+        incomes: mappedIncomes,
       });
 
       router.push(`/s/${result.id}`);
@@ -418,7 +400,7 @@ export default function Calculator() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-8" suppressHydrationWarning>
           <InputSection
             currency={currency}
             startingCash={startingCash}
@@ -456,6 +438,9 @@ export default function Calculator() {
 
         <LandingSections />
       </div>
+
+      {/* Saved Clocks Indicator */}
+      <SavedClocksIndicator />
     </div>
   );
 }
