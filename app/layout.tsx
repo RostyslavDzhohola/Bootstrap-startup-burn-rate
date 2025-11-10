@@ -16,7 +16,10 @@ export default function RootLayout({
   return (
     <ClerkProvider appearance={{ cssLayerName: "clerk" }}>
       <html lang="en" suppressHydrationWarning className="h-full">
-        <body className="antialiased h-full" suppressHydrationWarning>
+        <body
+          className="antialiased min-h-screen h-full bg-linear-to-br from-slate-50 via-white to-blue-50"
+          suppressHydrationWarning
+        >
           <Header />
           {children}
         </body>

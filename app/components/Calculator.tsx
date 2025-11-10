@@ -16,6 +16,7 @@ import ResultsSidebar from "./calculator/ResultsSidebar";
 import LandingSections from "./calculator/LandingSections";
 import SavedClocksIndicator from "./SavedClocksIndicator";
 import Footer from "./Footer";
+import CountdownTimer from "./calculator/CountdownTimer";
 
 export default function Calculator() {
   const { isSignedIn } = useUser();
@@ -97,14 +98,6 @@ export default function Calculator() {
   );
 
   // Countdown timer state
-  const [countdownTime, setCountdownTime] = useState<{
-    years: number;
-    months: number;
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-  } | null>(null);
   const [countdownEndTime, setCountdownEndTime] = useState<number | null>(null);
   const [savedClockEndDate, setSavedClockEndDate] = useState<string | null>(
     null
@@ -154,7 +147,6 @@ export default function Calculator() {
       isProfitable
     ) {
       setCountdownEndTime(null);
-      setCountdownTime(null);
       return;
     }
 
@@ -168,50 +160,10 @@ export default function Calculator() {
     savedClockEndDate,
   ]);
 
-  // Update countdown every second
-  useEffect(() => {
-    if (!countdownEndTime) {
-      setCountdownTime(null);
-      return;
-    }
-
-    const updateCountdown = () => {
-      const now = new Date().getTime();
-      const diff = countdownEndTime - now;
-
-      if (diff <= 0) {
-        setCountdownTime({
-          years: 0,
-          months: 0,
-          days: 0,
-          hours: 0,
-          minutes: 0,
-          seconds: 0,
-        });
-        return;
-      }
-
-      const totalSeconds = Math.floor(diff / 1000);
-      const totalMinutes = Math.floor(totalSeconds / 60);
-      const totalHours = Math.floor(totalMinutes / 60);
-      const totalDays = Math.floor(totalHours / 24);
-      const totalMonths = Math.floor(totalDays / 30);
-      const totalYears = Math.floor(totalMonths / 12);
-
-      setCountdownTime({
-        years: totalYears,
-        months: totalMonths % 12,
-        days: totalDays % 30,
-        hours: totalHours % 24,
-        minutes: totalMinutes % 60,
-        seconds: totalSeconds % 60,
-      });
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-
-    return () => clearInterval(interval);
+  // Convert countdown end time to Date object for CountdownTimer
+  const countdownEndDate = useMemo(() => {
+    if (!countdownEndTime) return null;
+    return new Date(countdownEndTime);
   }, [countdownEndTime]);
 
   const financialSummary = useMemo(() => {
@@ -341,84 +293,7 @@ export default function Calculator() {
 
           {/* Prominent Countdown Timer - Always Visible */}
           <div className="relative mx-auto w-full">
-            {/* Glow effect behind */}
-            <div className="absolute inset-0 bg-linear-to-br from-red-600/20 via-orange-600/20 to-red-800/20 blur-3xl rounded-3xl -z-10"></div>
-
-            <div className="bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl p-6 sm:p-8 border-2 border-red-500/50 shadow-2xl relative">
-              {/* End date label in top-right corner */}
-              {countdownEndTime && (
-                <div className="absolute top-4 right-4 text-xs text-slate-400 font-medium">
-                  {new Date(countdownEndTime).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </div>
-              )}
-              <div className="text-center mb-4">
-                <div className="text-xs sm:text-sm font-semibold text-red-400 uppercase tracking-wider mb-2">
-                  Time until bankruptcy
-                </div>
-                <div className="h-px bg-linear-to-r from-transparent via-red-500/50 to-transparent"></div>
-              </div>
-
-              <div className="grid grid-cols-6 gap-3 sm:gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
-                    {countdownTime?.years ?? 0}
-                  </div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    Years
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
-                    {countdownTime?.months ?? 0}
-                  </div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    Months
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
-                    {countdownTime?.days ?? 0}
-                  </div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    Days
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
-                    {String(countdownTime?.hours ?? 0).padStart(2, "0")}
-                  </div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    Hours
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
-                    {String(countdownTime?.minutes ?? 0).padStart(2, "0")}
-                  </div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    Minutes
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`text-3xl sm:text-4xl md:text-5xl font-bold mb-1 tabular-nums ${
-                      countdownTime
-                        ? "text-red-400 animate-pulse"
-                        : "text-white"
-                    }`}
-                  >
-                    {String(countdownTime?.seconds ?? 0).padStart(2, "0")}
-                  </div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    Seconds
-                  </div>
-                </div>
-              </div>
-            </div>
+            <CountdownTimer endDate={countdownEndDate} showEndDate={true} />
           </div>
         </div>
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import toast from "react-hot-toast";
+import CountdownTimer from "@/app/components/calculator/CountdownTimer";
 
 interface ScenarioPageProps {
   scenario: {
@@ -18,14 +19,7 @@ export default function ScenarioPage({
   scenario,
   isSignedIn,
 }: ScenarioPageProps) {
-  const [countdownTime, setCountdownTime] = useState<{
-    years: number;
-    months: number;
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-  } | null>(null);
+  const [showEmbedCode, setShowEmbedCode] = useState(false);
 
   // Parse saved runway end date from database - memoized to prevent infinite loops
   const endDate = useMemo(() => {
@@ -46,72 +40,32 @@ export default function ScenarioPage({
     }
   }, [isSignedIn, endDate]);
 
-  // Update countdown every second
-  useEffect(() => {
-    if (!endDate) {
-      // Clear countdown when endDate becomes null - use setTimeout to avoid synchronous setState
-      const timeoutId = setTimeout(() => {
-        setCountdownTime(null);
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    }
+  // Generate embed URL
+  const generateEmbedUrl = (options: {
+    transparent?: boolean;
+    compact?: boolean;
+  }) => {
+    const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
+    const params = new URLSearchParams();
+    if (options.transparent) params.set("transparent", "true");
+    if (options.compact) params.set("compact", "true");
+    const queryString = params.toString();
+    return `${baseUrl}/embed/${scenario.id}${
+      queryString ? `?${queryString}` : ""
+    }`;
+  };
 
-    const updateCountdown = () => {
-      const now = new Date().getTime();
-      const endTime = endDate.getTime();
-
-      // Validate dates
-      if (isNaN(now) || isNaN(endTime)) {
-        setCountdownTime({
-          years: 0,
-          months: 0,
-          days: 0,
-          hours: 0,
-          minutes: 0,
-          seconds: 0,
-        });
-        return;
-      }
-
-      const diff = endTime - now;
-
-      if (diff <= 0) {
-        setCountdownTime({
-          years: 0,
-          months: 0,
-          days: 0,
-          hours: 0,
-          minutes: 0,
-          seconds: 0,
-        });
-        return;
-      }
-
-      const totalSeconds = Math.floor(diff / 1000);
-      const totalMinutes = Math.floor(totalSeconds / 60);
-      const totalHours = Math.floor(totalMinutes / 60);
-      const totalDays = Math.floor(totalHours / 24);
-      const totalMonths = Math.floor(totalDays / 30);
-      const totalYears = Math.floor(totalMonths / 12);
-
-      setCountdownTime({
-        years: isNaN(totalYears) ? 0 : totalYears,
-        months: isNaN(totalMonths % 12) ? 0 : totalMonths % 12,
-        days: isNaN(totalDays % 30) ? 0 : totalDays % 30,
-        hours: isNaN(totalHours % 24) ? 0 : totalHours % 24,
-        minutes: isNaN(totalMinutes % 60) ? 0 : totalMinutes % 60,
-        seconds: isNaN(totalSeconds % 60) ? 0 : totalSeconds % 60,
-      });
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-
-    return () => clearInterval(interval);
-  }, [endDate]);
+  // Generate embed code for iframe (for websites/HTML editors)
+  const generateEmbedCode = (options: {
+    transparent?: boolean;
+    compact?: boolean;
+  }) => {
+    const embedUrl = generateEmbedUrl(options);
+    return `<iframe src="${embedUrl}" width="100%" height="300" frameborder="0" style="border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></iframe>`;
+  };
 
   return (
-    <div className="h-[calc(100vh-4rem)] bg-linear-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center overflow-hidden">
+    <div className="min-h-[calc(100vh-4rem)] bg-linear-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center overflow-hidden py-8">
       <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center">
         {/* Calculator Focus */}
         <div className="text-center space-y-6 w-full">
@@ -133,114 +87,117 @@ export default function ScenarioPage({
 
           {/* Prominent Countdown Timer - Always Visible */}
           <div className="relative mx-auto w-full flex justify-center">
-            {/* Glow effect behind */}
-            <div className="absolute inset-0 bg-linear-to-br from-red-600/20 via-orange-600/20 to-red-800/20 blur-3xl rounded-3xl -z-10"></div>
+            <CountdownTimer endDate={endDate} showEndDate={true} />
+          </div>
 
-            <div className="bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl p-6 sm:p-8 border-2 border-red-500/50 shadow-2xl relative w-full">
-              {/* End date label in top-right corner */}
-              {endDate && (
-                <div className="absolute top-4 right-4 text-xs text-slate-400 font-medium">
-                  {endDate.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </div>
-              )}
-              <div className="text-center mb-4">
-                <div className="text-xs sm:text-sm font-semibold text-red-400 uppercase tracking-wider mb-2">
-                  Time until bankruptcy
-                </div>
-                <div className="h-px bg-linear-to-r from-transparent via-red-500/50 to-transparent"></div>
-              </div>
+          {/* Embed Code Generator */}
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setShowEmbedCode(!showEmbedCode)}
+              className="px-6 py-3 bg-linear-to-br from-slate-900 via-red-950 to-slate-900 text-white rounded-lg font-medium transition-all duration-300 border-2 border-red-500/50 shadow-[0_8px_24px_rgba(0,0,0,0.4),0_0_20px_rgba(239,68,68,0.25),inset_0_1px_0_rgba(255,255,255,0.1)] hover:shadow-[0_12px_32px_rgba(0,0,0,0.5),0_0_30px_rgba(239,68,68,0.4),inset_0_1px_0_rgba(255,255,255,0.1)]"
+            >
+              {showEmbedCode ? "Hide" : "Get"} Embed Code
+            </button>
 
-              <div className="grid grid-cols-6 gap-3 sm:gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
-                    {countdownTime
-                      ? isNaN(countdownTime.years)
-                        ? 0
-                        : countdownTime.years
-                      : 0}
+            {showEmbedCode && (
+              <div className="mt-4 space-y-4">
+                {/* Notion Embed Section */}
+                <div className="bg-slate-800 rounded-lg p-4 text-left">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-slate-400 font-semibold">
+                      For Notion (Copy URL)
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          generateEmbedUrl({
+                            transparent: false,
+                            compact: false,
+                          })
+                        );
+                        toast.success(
+                          "Embed URL copied! Paste into Notion's embed block."
+                        );
+                      }}
+                      className="text-xs text-red-400 hover:text-red-300"
+                    >
+                      Copy URL
+                    </button>
                   </div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    Years
-                  </div>
+                  <code className="text-xs text-slate-300 break-all block mb-2">
+                    {generateEmbedUrl({ transparent: false, compact: false })}
+                  </code>
+                  <p className="text-xs text-slate-500 mt-2">
+                    In Notion: Type &quot;/embed&quot; → Paste this URL → Press
+                    Enter
+                  </p>
                 </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
-                    {countdownTime
-                      ? isNaN(countdownTime.months)
-                        ? 0
-                        : countdownTime.months
-                      : 0}
+
+                {/* Compact & Transparent for Notion */}
+                <div className="bg-slate-800 rounded-lg p-4 text-left">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-slate-400 font-semibold">
+                      For Notion (Compact & Transparent)
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          generateEmbedUrl({
+                            transparent: true,
+                            compact: true,
+                          })
+                        );
+                        toast.success(
+                          "Embed URL copied! Paste into Notion's embed block."
+                        );
+                      }}
+                      className="text-xs text-red-400 hover:text-red-300"
+                    >
+                      Copy URL
+                    </button>
                   </div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    Months
-                  </div>
+                  <code className="text-xs text-slate-300 break-all block mb-2">
+                    {generateEmbedUrl({ transparent: true, compact: true })}
+                  </code>
+                  <p className="text-xs text-slate-500 mt-2">
+                    In Notion: Type &quot;/embed&quot; → Paste this URL → Press
+                    Enter
+                  </p>
                 </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
-                    {countdownTime
-                      ? isNaN(countdownTime.days)
-                        ? 0
-                        : countdownTime.days
-                      : 0}
+
+                {/* HTML iframe for websites */}
+                <div className="bg-slate-800 rounded-lg p-4 text-left">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs text-slate-400 font-semibold">
+                      For Websites (HTML iframe)
+                    </span>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          generateEmbedCode({
+                            transparent: false,
+                            compact: false,
+                          })
+                        );
+                        toast.success("HTML code copied to clipboard!");
+                      }}
+                      className="text-xs text-red-400 hover:text-red-300"
+                    >
+                      Copy HTML
+                    </button>
                   </div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    Days
-                  </div>
+                  <code className="text-xs text-slate-300 break-all block">
+                    {generateEmbedCode({ transparent: false, compact: false })}
+                  </code>
                 </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
-                    {String(
-                      countdownTime
-                        ? isNaN(countdownTime.hours)
-                          ? 0
-                          : countdownTime.hours
-                        : 0
-                    ).padStart(2, "0")}
-                  </div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    Hours
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
-                    {String(
-                      countdownTime
-                        ? isNaN(countdownTime.minutes)
-                          ? 0
-                          : countdownTime.minutes
-                        : 0
-                    ).padStart(2, "0")}
-                  </div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    Minutes
-                  </div>
-                </div>
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`text-3xl sm:text-4xl md:text-5xl font-bold mb-1 tabular-nums ${
-                      countdownTime
-                        ? "text-red-400 animate-pulse"
-                        : "text-white"
-                    }`}
-                  >
-                    {String(
-                      countdownTime
-                        ? isNaN(countdownTime.seconds)
-                          ? 0
-                          : countdownTime.seconds
-                        : 0
-                    ).padStart(2, "0")}
-                  </div>
-                  <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-                    Seconds
-                  </div>
-                </div>
+
+                <p className="text-sm text-slate-600">
+                  For Notion: Copy the URL and paste it into Notion&apos;s embed
+                  block (type &quot;/embed&quot;). For websites: Copy the HTML
+                  iframe code.
+                </p>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
