@@ -9,7 +9,7 @@ import {
   computeRunwayEndDate,
   sumMonthlyCents,
 } from "@/lib/calc";
-import { saveClock } from "@/app/actions";
+import { saveClock, getUserClocks } from "@/app/actions";
 import { Expense, Income } from "./calculator/types";
 import InputSection from "./calculator/InputSection";
 import ResultsSidebar from "./calculator/ResultsSidebar";
@@ -86,6 +86,15 @@ export default function Calculator() {
   const trimmedCity = city.trim();
   const locationLabel = trimmedCity || "your current plan";
 
+  // Check if all inputs are zero/empty
+  const hasNoInputs = useMemo(
+    () =>
+      startingCashCents === 0 &&
+      expensesMonthlyCents === 0 &&
+      incomesMonthlyCents === 0,
+    [startingCashCents, expensesMonthlyCents, incomesMonthlyCents]
+  );
+
   // Countdown timer state
   const [countdownTime, setCountdownTime] = useState<{
     years: number;
@@ -96,9 +105,47 @@ export default function Calculator() {
     seconds: number;
   } | null>(null);
   const [countdownEndTime, setCountdownEndTime] = useState<number | null>(null);
+  const [savedClockEndDate, setSavedClockEndDate] = useState<string | null>(
+    null
+  );
 
-  // Update countdown end time when runwayDays changes
+  // Load saved clock end date when signed in
   useEffect(() => {
+    if (!isSignedIn) {
+      setSavedClockEndDate(null);
+      return;
+    }
+
+    const fetchSavedClock = async () => {
+      try {
+        const userClocks = await getUserClocks();
+        if (userClocks.length > 0 && userClocks[0].runwayEndDate) {
+          setSavedClockEndDate(userClocks[0].runwayEndDate);
+        } else {
+          setSavedClockEndDate(null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch saved clock:", error);
+        setSavedClockEndDate(null);
+      }
+    };
+
+    fetchSavedClock();
+  }, [isSignedIn]);
+
+  // Update countdown end time when runwayDays changes or saved clock is available
+  useEffect(() => {
+    // If inputs are empty and saved clock exists, use saved clock end date
+    if (hasNoInputs && savedClockEndDate) {
+      const savedDate = new Date(savedClockEndDate);
+      const now = new Date();
+      if (savedDate > now) {
+        setCountdownEndTime(savedDate.getTime());
+        return;
+      }
+    }
+
+    // Otherwise, use computed runway end date
     if (
       !isFinite(runwayDays) ||
       runwayDays <= 0 ||
@@ -112,7 +159,13 @@ export default function Calculator() {
 
     const now = new Date();
     setCountdownEndTime(now.getTime() + runwayDays * 24 * 60 * 60 * 1000);
-  }, [runwayDays, dailyBurnCents, isProfitable]);
+  }, [
+    runwayDays,
+    dailyBurnCents,
+    isProfitable,
+    hasNoInputs,
+    savedClockEndDate,
+  ]);
 
   // Update countdown every second
   useEffect(() => {
@@ -161,11 +214,6 @@ export default function Calculator() {
   }, [countdownEndTime]);
 
   const financialSummary = useMemo(() => {
-    // Check if all inputs are zero/empty
-    const hasNoInputs =
-      startingCashCents === 0 &&
-      expensesMonthlyCents === 0 &&
-      incomesMonthlyCents === 0;
     if (hasNoInputs) {
       return "Please enter your numbers.";
     }
@@ -186,15 +234,7 @@ export default function Calculator() {
       )} in surplus every month—consider reinvesting to extend your lead.`;
     }
     return "Your income currently matches expenses. A small buffer can protect against unexpected costs.";
-  }, [
-    netMonthlyCents,
-    runwayDays,
-    locationLabel,
-    formatCurrency,
-    startingCashCents,
-    expensesMonthlyCents,
-    incomesMonthlyCents,
-  ]);
+  }, [netMonthlyCents, runwayDays, locationLabel, formatCurrency, hasNoInputs]);
 
   const goAllInGuidance = useMemo(() => {
     if (isProfitable) {
@@ -299,11 +339,21 @@ export default function Calculator() {
           </h1>
 
           {/* Prominent Countdown Timer - Always Visible */}
-          <div className="relative mx-auto max-w-4xl">
+          <div className="relative mx-auto w-full">
             {/* Glow effect behind */}
             <div className="absolute inset-0 bg-linear-to-br from-red-600/20 via-orange-600/20 to-red-800/20 blur-3xl rounded-3xl -z-10"></div>
 
-            <div className="bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl p-6 sm:p-8 border-2 border-red-500/50 shadow-2xl">
+            <div className="bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl p-6 sm:p-8 border-2 border-red-500/50 shadow-2xl relative">
+              {/* End date label in top-right corner */}
+              {countdownEndTime && (
+                <div className="absolute top-4 right-4 text-xs text-slate-400 font-medium">
+                  {new Date(countdownEndTime).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </div>
+              )}
               <div className="text-center mb-4">
                 <div className="text-xs sm:text-sm font-semibold text-red-400 uppercase tracking-wider mb-2">
                   Time until bankruptcy
@@ -372,7 +422,11 @@ export default function Calculator() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-8" suppressHydrationWarning>
+        <div
+          id="calculator"
+          className="grid lg:grid-cols-3 gap-8"
+          suppressHydrationWarning
+        >
           <InputSection
             currency={currency}
             startingCash={startingCash}

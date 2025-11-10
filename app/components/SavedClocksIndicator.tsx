@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { FaClock } from "react-icons/fa";
 import { getUserClocks } from "@/app/actions";
 
 export default function SavedClocksIndicator() {
   const { isSignedIn } = useUser();
   const router = useRouter();
+  const pathname = usePathname();
   const [scenarios, setScenarios] = useState<
     Array<{ id: string; name: string; runwayEndDate: string | null }>
   >([]);
@@ -38,7 +39,8 @@ export default function SavedClocksIndicator() {
     }
   };
 
-  if (!isSignedIn || scenarios.length === 0) {
+  // Only show on home page
+  if (pathname !== "/" || !isSignedIn || scenarios.length === 0) {
     return null;
   }
 

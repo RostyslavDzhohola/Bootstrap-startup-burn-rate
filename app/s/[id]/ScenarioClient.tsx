@@ -1,10 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
-import { FaInfoCircle } from "react-icons/fa";
 import toast from "react-hot-toast";
-import SavedClocksIndicator from "@/app/components/SavedClocksIndicator";
 
 interface ScenarioPageProps {
   scenario: {
@@ -21,7 +18,6 @@ export default function ScenarioPage({
   scenario,
   isSignedIn,
 }: ScenarioPageProps) {
-  const router = useRouter();
   const [countdownTime, setCountdownTime] = useState<{
     years: number;
     months: number;
@@ -30,7 +26,6 @@ export default function ScenarioPage({
     minutes: number;
     seconds: number;
   } | null>(null);
-  const [showTooltip, setShowTooltip] = useState(false);
 
   // Parse saved runway end date from database - memoized to prevent infinite loops
   const endDate = useMemo(() => {
@@ -115,44 +110,51 @@ export default function ScenarioPage({
     return () => clearInterval(interval);
   }, [endDate]);
 
-  const handleResetClock = () => {
-    router.push("/");
-  };
-
   return (
-    <div className="h-[calc(100vh-4rem)] bg-linear-to-br from-slate-50 via-white to-blue-50 flex flex-col overflow-hidden">
-      {/* Centered Countdown Timer */}
-      <div className="flex-1 flex items-center justify-center px-4 py-2">
-        <div className="w-full max-w-4xl">
-          <div className="relative">
+    <div className="h-[calc(100vh-4rem)] bg-linear-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center overflow-hidden">
+      <div className="max-w-5xl w-full px-4 sm:px-6 lg:px-8">
+        {/* Calculator Focus */}
+        <div className="text-center space-y-6">
+          <h1 className="text-4xl sm:text-5xl font-bold leading-tight">
+            <span className="relative inline-block">
+              {/* Glow shadow layer */}
+              <span
+                className="absolute inset-0 bg-linear-to-r from-red-600 via-rose-500 to-pink-500 blur-2xl opacity-50 -z-10"
+                aria-hidden="true"
+              >
+                How many days do you have to make it?
+              </span>
+              {/* Main gradient text with shadow */}
+              <span className="relative bg-linear-to-r from-red-700 via-rose-600 to-pink-600 bg-clip-text text-transparent filter-[drop-shadow(0_4px_12px_rgba(220,38,38,0.5))]">
+                How many days do you have to make it?
+              </span>
+            </span>
+          </h1>
+
+          {/* Prominent Countdown Timer - Always Visible */}
+          <div className="relative mx-auto w-full">
             {/* Glow effect behind */}
             <div className="absolute inset-0 bg-linear-to-br from-red-600/20 via-orange-600/20 to-red-800/20 blur-3xl rounded-3xl -z-10"></div>
 
-            <div className="bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl p-4 sm:p-6 border-2 border-red-500/50 shadow-2xl">
-              <div className="text-center mb-3 relative">
-                <div className="text-xs sm:text-sm font-semibold text-red-400 uppercase tracking-wider mb-1">
+            <div className="bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl p-6 sm:p-8 border-2 border-red-500/50 shadow-2xl relative">
+              {/* End date label in top-right corner */}
+              {endDate && (
+                <div className="absolute top-4 right-4 text-xs text-slate-400 font-medium">
+                  {endDate.toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  })}
+                </div>
+              )}
+              <div className="text-center mb-4">
+                <div className="text-xs sm:text-sm font-semibold text-red-400 uppercase tracking-wider mb-2">
                   Time until bankruptcy
                 </div>
                 <div className="h-px bg-linear-to-r from-transparent via-red-500/50 to-transparent"></div>
-
-                {/* Info Icon with Tooltip */}
-                <div className="absolute top-0 right-0">
-                  <div
-                    className="relative"
-                    onMouseEnter={() => setShowTooltip(true)}
-                    onMouseLeave={() => setShowTooltip(false)}
-                  >
-                    <FaInfoCircle className="text-red-400/70 hover:text-red-400 cursor-help text-sm" />
-                    {showTooltip && (
-                      <div className="absolute right-0 top-6 w-48 bg-slate-800 text-white text-xs p-2 rounded shadow-lg z-10 border border-slate-700">
-                        Save this page as your homepage to get reminders
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
 
-              <div className="grid grid-cols-6 gap-2 sm:gap-3">
+              <div className="grid grid-cols-6 gap-3 sm:gap-4">
                 <div className="flex flex-col items-center">
                   <div className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-1 tabular-nums">
                     {countdownTime
@@ -238,37 +240,10 @@ export default function ScenarioPage({
                   </div>
                 </div>
               </div>
-
-              {/* Runway End Date */}
-              {endDate && (
-                <div className="text-center mt-4">
-                  <div className="text-[10px] text-slate-400">
-                    Runway ends:{" "}
-                    {endDate.toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Reset Clock Button */}
-              <div className="text-center mt-4">
-                <button
-                  onClick={handleResetClock}
-                  className="inline-flex items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:shadow-md active:scale-[0.98]"
-                >
-                  Reset clock
-                </button>
-              </div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Saved Clocks Indicator */}
-      <SavedClocksIndicator />
     </div>
   );
 }

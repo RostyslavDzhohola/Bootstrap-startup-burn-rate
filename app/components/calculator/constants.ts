@@ -35,19 +35,19 @@ export const WORKFLOW_STEPS = [
     step: "1",
     title: "Map your finances",
     detail:
-      "List every recurring cost and the income you expect. We convert them into comparable monthly figures automatically.",
+      "List every recurring cost and every recurring income; we'll calculate how long your runway is.",
   },
   {
     step: "2",
-    title: "Stress test scenarios",
+    title: "Save the Clock",
     detail:
-      "Tweak hiring plans or pricing changes to see how your runway responds across best and worst-case situations.",
+      "Save it as your homepage to increase urgency and push yourself harder.",
   },
   {
     step: "3",
     title: "Decide with context",
     detail:
-      "Export a summary or share a live link when you are ready to brief the team or board.",
+      "Based on how long your runway is, decide how to reduce expenses, increase savings, or consider a cheaper city. Recommendation: check cities on Nomads.com to extend your run.",
   },
 ] as const;
 
@@ -55,17 +55,16 @@ export const FAQ_ITEMS = [
   {
     question: "How accurate is the runway calculation?",
     answer:
-      "We use a 30.44-day average month and factor in both expenses and income so you always see a realistic runway estimate.",
+      "This is a rough estimation to give you an idea and create urgency to work harder.",
   },
   {
-    question: "Can I save multiple scenarios?",
+    question: "Can I have multiple clocks?",
     answer:
-      "Yes. Sign in to save unlimited versions and revisit them any time. Each scenario keeps its own assumptions intact.",
+      "No, you can only have one clock at a time because you need to stay focused.",
   },
   {
-    question: "Does this work for international currencies?",
-    answer:
-      "Absolutely. Switch currencies instantly and all results reformat to match without affecting your stored data.",
+    question: "Do you save my income, expenses, or total cash?",
+    answer: "No, we only save the clock end date.",
   },
 ] as const;
 
