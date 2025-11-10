@@ -93,8 +93,12 @@ export default function CountdownTimer({
   }, [endDate]);
 
   const containerClass = compact ? "p-4 sm:p-6" : "p-6 sm:p-8";
-  const gridClass = compact
-    ? "grid grid-cols-6 gap-2 sm:gap-3"
+  // For embeds: responsive grid (2 cols on small, 6 on medium+)
+  // For regular: always 6 columns
+  const gridClass = isEmbed
+    ? "grid grid-cols-2 md:grid-cols-6 gap-4 sm:gap-6 md:gap-3"
+    : compact
+    ? "grid grid-cols-2 gap-4 sm:gap-6"
     : "grid grid-cols-6 gap-3 sm:gap-4";
   const numberClass = compact
     ? "text-2xl sm:text-3xl md:text-4xl"
@@ -132,98 +136,244 @@ export default function CountdownTimer({
         </div>
 
         <div className={gridClass}>
-          <div className="flex flex-col items-center">
-            <div
-              className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
-            >
-              {countdownTime
-                ? isNaN(countdownTime.years)
-                  ? 0
-                  : countdownTime.years
-                : 0}
-            </div>
-            <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-              Years
-            </div>
-          </div>
-          <div className="flex flex-col items-center">
-            <div
-              className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
-            >
-              {countdownTime
-                ? isNaN(countdownTime.months)
-                  ? 0
-                  : countdownTime.months
-                : 0}
-            </div>
-            <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-              Months
-            </div>
-          </div>
-          <div className="flex flex-col items-center">
-            <div
-              className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
-            >
-              {countdownTime
-                ? isNaN(countdownTime.days)
-                  ? 0
-                  : countdownTime.days
-                : 0}
-            </div>
-            <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-              Days
-            </div>
-          </div>
-          <div className="flex flex-col items-center">
-            <div
-              className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
-            >
-              {String(
-                countdownTime
-                  ? isNaN(countdownTime.hours)
-                    ? 0
-                    : countdownTime.hours
-                  : 0
-              ).padStart(2, "0")}
-            </div>
-            <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-              Hours
-            </div>
-          </div>
-          <div className="flex flex-col items-center">
-            <div
-              className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
-            >
-              {String(
-                countdownTime
-                  ? isNaN(countdownTime.minutes)
-                    ? 0
-                    : countdownTime.minutes
-                  : 0
-              ).padStart(2, "0")}
-            </div>
-            <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-              Minutes
-            </div>
-          </div>
-          <div className="flex flex-col items-center">
-            <div
-              className={`${numberClass} font-bold mb-1 tabular-nums ${
-                countdownTime ? "text-red-400 animate-pulse" : "text-white"
-              }`}
-            >
-              {String(
-                countdownTime
-                  ? isNaN(countdownTime.seconds)
-                    ? 0
-                    : countdownTime.seconds
-                  : 0
-              ).padStart(2, "0")}
-            </div>
-            <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
-              Seconds
-            </div>
-          </div>
+          {isEmbed ? (
+            <>
+              {/* Embed mode: Responsive - Days/Hours on small, all 6 on medium+ */}
+              {/* Years - hidden on small screens, visible on medium+ */}
+              <div className="hidden md:flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+                >
+                  {countdownTime
+                    ? isNaN(countdownTime.years)
+                      ? 0
+                      : countdownTime.years
+                    : 0}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Years
+                </div>
+              </div>
+
+              {/* Months - hidden on small screens, visible on medium+ */}
+              <div className="hidden md:flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+                >
+                  {countdownTime
+                    ? isNaN(countdownTime.months)
+                      ? 0
+                      : countdownTime.months
+                    : 0}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Months
+                </div>
+              </div>
+
+              {/* Days - always visible in embed */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+                >
+                  {countdownTime
+                    ? isNaN(countdownTime.days)
+                      ? 0
+                      : countdownTime.days
+                    : 0}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Days
+                </div>
+              </div>
+
+              {/* Hours - always visible in embed */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+                >
+                  {String(
+                    countdownTime
+                      ? isNaN(countdownTime.hours)
+                        ? 0
+                        : countdownTime.hours
+                      : 0
+                  ).padStart(2, "0")}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Hours
+                </div>
+              </div>
+
+              {/* Minutes - hidden on small screens, visible on medium+ */}
+              <div className="hidden md:flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+                >
+                  {String(
+                    countdownTime
+                      ? isNaN(countdownTime.minutes)
+                        ? 0
+                        : countdownTime.minutes
+                      : 0
+                  ).padStart(2, "0")}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Minutes
+                </div>
+              </div>
+
+              {/* Seconds - hidden on small screens, visible on medium+ */}
+              <div className="hidden md:flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold mb-1 tabular-nums ${
+                    countdownTime ? "text-red-400 animate-pulse" : "text-white"
+                  }`}
+                >
+                  {String(
+                    countdownTime
+                      ? isNaN(countdownTime.seconds)
+                        ? 0
+                        : countdownTime.seconds
+                      : 0
+                  ).padStart(2, "0")}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Seconds
+                </div>
+              </div>
+            </>
+          ) : compact ? (
+            <>
+              {/* Regular compact mode: Only Days and Hours */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+                >
+                  {countdownTime
+                    ? isNaN(countdownTime.days)
+                      ? 0
+                      : countdownTime.days
+                    : 0}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Days
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+                >
+                  {String(
+                    countdownTime
+                      ? isNaN(countdownTime.hours)
+                        ? 0
+                        : countdownTime.hours
+                      : 0
+                  ).padStart(2, "0")}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Hours
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Regular full mode: All 6 time units */}
+              <div className="flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+                >
+                  {countdownTime
+                    ? isNaN(countdownTime.years)
+                      ? 0
+                      : countdownTime.years
+                    : 0}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Years
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+                >
+                  {countdownTime
+                    ? isNaN(countdownTime.months)
+                      ? 0
+                      : countdownTime.months
+                    : 0}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Months
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+                >
+                  {countdownTime
+                    ? isNaN(countdownTime.days)
+                      ? 0
+                      : countdownTime.days
+                    : 0}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Days
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+                >
+                  {String(
+                    countdownTime
+                      ? isNaN(countdownTime.hours)
+                        ? 0
+                        : countdownTime.hours
+                      : 0
+                  ).padStart(2, "0")}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Hours
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+                >
+                  {String(
+                    countdownTime
+                      ? isNaN(countdownTime.minutes)
+                        ? 0
+                        : countdownTime.minutes
+                      : 0
+                  ).padStart(2, "0")}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Minutes
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <div
+                  className={`${numberClass} font-bold mb-1 tabular-nums ${
+                    countdownTime ? "text-red-400 animate-pulse" : "text-white"
+                  }`}
+                >
+                  {String(
+                    countdownTime
+                      ? isNaN(countdownTime.seconds)
+                        ? 0
+                        : countdownTime.seconds
+                      : 0
+                  ).padStart(2, "0")}
+                </div>
+                <div className="text-xs text-slate-400 uppercase tracking-wider font-medium">
+                  Seconds
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
