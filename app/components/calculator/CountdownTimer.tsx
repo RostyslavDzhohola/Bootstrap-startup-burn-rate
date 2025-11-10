@@ -93,16 +93,20 @@ export default function CountdownTimer({
   }, [endDate]);
 
   const containerClass = compact ? "p-4 sm:p-6" : "p-6 sm:p-8";
-  // For embeds: responsive grid (2 cols on small, 6 on medium+)
+  // For embeds: responsive grid (3 cols on small, 6 on medium+)
   // For regular: always 6 columns
   const gridClass = isEmbed
-    ? "grid grid-cols-2 md:grid-cols-6 gap-4 sm:gap-6 md:gap-3"
+    ? "grid grid-cols-3 md:grid-cols-6 gap-4 sm:gap-6 md:gap-3"
     : compact
     ? "grid grid-cols-2 gap-4 sm:gap-6"
     : "grid grid-cols-6 gap-3 sm:gap-4";
   const numberClass = compact
     ? "text-2xl sm:text-3xl md:text-4xl"
     : "text-3xl sm:text-4xl md:text-5xl";
+
+  // Determine which 3 units to show in embed compact mode
+  const showYearsInCompact =
+    isEmbed && countdownTime && countdownTime.years > 0;
 
   return (
     <div className="relative mx-auto w-full">
@@ -118,9 +122,9 @@ export default function CountdownTimer({
             : "shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,0.1)]"
         } relative`}
       >
-        {/* End date label in top-right corner */}
+        {/* End date label - top-right on medium+ screens */}
         {showEndDate && endDate && (
-          <div className="absolute top-4 right-4 text-xs text-slate-400 font-medium">
+          <div className="hidden md:block absolute top-4 right-4 text-xs text-slate-400 font-medium">
             {endDate.toLocaleDateString("en-US", {
               month: "short",
               day: "numeric",
@@ -138,9 +142,14 @@ export default function CountdownTimer({
         <div className={gridClass}>
           {isEmbed ? (
             <>
-              {/* Embed mode: Responsive - Days/Hours on small, all 6 on medium+ */}
-              {/* Years - hidden on small screens, visible on medium+ */}
-              <div className="hidden md:flex flex-col items-center">
+              {/* Embed mode: Responsive - 3 units on small (Years/Months/Days if years>0, else Months/Days/Hours), all 6 on medium+ */}
+
+              {/* Years - Show on small if years > 0, always show on medium+ */}
+              <div
+                className={`${
+                  showYearsInCompact ? "flex" : "hidden md:flex"
+                } flex-col items-center`}
+              >
                 <div
                   className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
                 >
@@ -155,8 +164,8 @@ export default function CountdownTimer({
                 </div>
               </div>
 
-              {/* Months - hidden on small screens, visible on medium+ */}
-              <div className="hidden md:flex flex-col items-center">
+              {/* Months - Always show on small (if years=0), always show on medium+ */}
+              <div className="flex flex-col items-center">
                 <div
                   className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
                 >
@@ -171,7 +180,7 @@ export default function CountdownTimer({
                 </div>
               </div>
 
-              {/* Days - always visible in embed */}
+              {/* Days - Always visible */}
               <div className="flex flex-col items-center">
                 <div
                   className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
@@ -187,8 +196,12 @@ export default function CountdownTimer({
                 </div>
               </div>
 
-              {/* Hours - always visible in embed */}
-              <div className="flex flex-col items-center">
+              {/* Hours - Show on small only if years = 0, always show on medium+ */}
+              <div
+                className={`${
+                  showYearsInCompact ? "hidden md:flex" : "flex"
+                } flex-col items-center`}
+              >
                 <div
                   className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
                 >
@@ -375,6 +388,17 @@ export default function CountdownTimer({
             </>
           )}
         </div>
+
+        {/* Date below clock (small screens, embed only) */}
+        {showEndDate && endDate && isEmbed && (
+          <div className="block md:hidden mt-4 text-center text-xs text-slate-400 font-medium">
+            {endDate.toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
