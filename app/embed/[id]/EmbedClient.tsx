@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import CountdownTimer from "@/app/components/calculator/CountdownTimer";
 
 interface EmbedClientProps {
@@ -11,7 +12,8 @@ interface EmbedClientProps {
 
 /**
  * Client component for the embed route.
- * Renders the countdown timer with optional transparent background and compact sizing.
+ * Renders ONLY the countdown timer with proper compact/transparent modes.
+ * No headers, no page chrome, just the clock component.
  */
 export default function EmbedClient({
   endDate,
@@ -19,28 +21,44 @@ export default function EmbedClient({
   transparent = false,
   compact = false,
 }: EmbedClientProps) {
-  const parsedDate = endDate ? new Date(endDate) : null;
+  // Parse saved runway end date from database - memoized to prevent infinite loops
+  const parsedDate = useMemo(() => {
+    if (!endDate) return null;
+    const date = new Date(endDate);
+    return isNaN(date.getTime()) ? null : date;
+  }, [endDate]);
 
-  const bgClass = transparent
-    ? ""
-    : "bg-linear-to-br from-slate-50 via-white to-blue-50";
-
-  return (
-    <div
-      className={`min-h-screen flex items-center justify-center p-4 ${bgClass}`}
-    >
-      <div className="w-full max-w-3xl">
-        {!transparent && (
-          <h2 className="text-2xl font-bold text-center mb-6 text-slate-800">
-            {name}
-          </h2>
-        )}
-        <CountdownTimer
-          endDate={parsedDate}
-          showEndDate={!transparent}
-          compact={compact}
-        />
+  // Regular embed: Just clock with minimal padding
+  if (!transparent && !compact) {
+    return (
+      <div className="p-4 flex items-center justify-center min-h-[200px]">
+        <CountdownTimer endDate={parsedDate} showEndDate={true} compact={false} />
       </div>
+    );
+  }
+
+  // Compact mode: Smaller padding, compact clock
+  if (!transparent && compact) {
+    return (
+      <div className="p-2 flex items-center justify-center min-h-[150px]">
+        <CountdownTimer endDate={parsedDate} showEndDate={true} compact={true} />
+      </div>
+    );
+  }
+
+  // Transparent & Compact: No wrapper, just clock, transparent background
+  if (transparent && compact) {
+    return (
+      <div className="p-1 flex items-center justify-center">
+        <CountdownTimer endDate={parsedDate} showEndDate={true} compact={true} />
+      </div>
+    );
+  }
+
+  // Transparent only (no compact): Minimal padding, transparent background
+  return (
+    <div className="p-2 flex items-center justify-center min-h-[200px]">
+      <CountdownTimer endDate={parsedDate} showEndDate={true} compact={false} />
     </div>
   );
 }
