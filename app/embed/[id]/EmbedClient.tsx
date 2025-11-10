@@ -26,8 +26,13 @@ export default function EmbedClient({
     return isNaN(date.getTime()) ? null : date;
   }, [endDate]);
 
-  // Return just the clock component - no wrappers, no padding, no background
+  // Return just the clock component - no wrappers, no padding, no background, no shadows
   return (
-    <CountdownTimer endDate={parsedDate} showEndDate={true} compact={compact} />
+    <CountdownTimer
+      endDate={parsedDate}
+      showEndDate={true}
+      compact={compact}
+      isEmbed={true}
+    />
   );
 }

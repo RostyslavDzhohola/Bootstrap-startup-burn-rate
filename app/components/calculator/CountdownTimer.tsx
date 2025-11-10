@@ -6,6 +6,7 @@ interface CountdownTimerProps {
   endDate: Date | null;
   showEndDate?: boolean;
   compact?: boolean;
+  isEmbed?: boolean;
 }
 
 /**
@@ -16,6 +17,7 @@ export default function CountdownTimer({
   endDate,
   showEndDate = true,
   compact = false,
+  isEmbed = false,
 }: CountdownTimerProps) {
   const [countdownTime, setCountdownTime] = useState<{
     years: number;
@@ -100,11 +102,17 @@ export default function CountdownTimer({
 
   return (
     <div className="relative mx-auto w-full">
-      {/* Glow effect behind */}
-      <div className="absolute inset-0 bg-linear-to-br from-red-600/20 via-orange-600/20 to-red-800/20 blur-3xl rounded-3xl -z-10"></div>
+      {/* Glow effect behind - hidden in embed mode */}
+      {!isEmbed && (
+        <div className="absolute inset-0 bg-linear-to-br from-red-600/20 via-orange-600/20 to-red-800/20 blur-3xl rounded-3xl -z-10"></div>
+      )}
 
       <div
-        className={`bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl ${containerClass} border-2 border-red-500/50 shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,0.1)] relative`}
+        className={`bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl ${containerClass} border-2 border-red-500/50 ${
+          isEmbed
+            ? ""
+            : "shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_40px_rgba(239,68,68,0.3),inset_0_1px_0_rgba(255,255,255,0.1)]"
+        } relative`}
       >
         {/* End date label in top-right corner */}
         {showEndDate && endDate && (
@@ -125,7 +133,9 @@ export default function CountdownTimer({
 
         <div className={gridClass}>
           <div className="flex flex-col items-center">
-            <div className={`${numberClass} font-bold text-white mb-1 tabular-nums`}>
+            <div
+              className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+            >
               {countdownTime
                 ? isNaN(countdownTime.years)
                   ? 0
@@ -137,7 +147,9 @@ export default function CountdownTimer({
             </div>
           </div>
           <div className="flex flex-col items-center">
-            <div className={`${numberClass} font-bold text-white mb-1 tabular-nums`}>
+            <div
+              className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+            >
               {countdownTime
                 ? isNaN(countdownTime.months)
                   ? 0
@@ -149,7 +161,9 @@ export default function CountdownTimer({
             </div>
           </div>
           <div className="flex flex-col items-center">
-            <div className={`${numberClass} font-bold text-white mb-1 tabular-nums`}>
+            <div
+              className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+            >
               {countdownTime
                 ? isNaN(countdownTime.days)
                   ? 0
@@ -161,7 +175,9 @@ export default function CountdownTimer({
             </div>
           </div>
           <div className="flex flex-col items-center">
-            <div className={`${numberClass} font-bold text-white mb-1 tabular-nums`}>
+            <div
+              className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+            >
               {String(
                 countdownTime
                   ? isNaN(countdownTime.hours)
@@ -175,7 +191,9 @@ export default function CountdownTimer({
             </div>
           </div>
           <div className="flex flex-col items-center">
-            <div className={`${numberClass} font-bold text-white mb-1 tabular-nums`}>
+            <div
+              className={`${numberClass} font-bold text-white mb-1 tabular-nums`}
+            >
               {String(
                 countdownTime
                   ? isNaN(countdownTime.minutes)
@@ -191,9 +209,7 @@ export default function CountdownTimer({
           <div className="flex flex-col items-center">
             <div
               className={`${numberClass} font-bold mb-1 tabular-nums ${
-                countdownTime
-                  ? "text-red-400 animate-pulse"
-                  : "text-white"
+                countdownTime ? "text-red-400 animate-pulse" : "text-white"
               }`}
             >
               {String(
@@ -213,4 +229,3 @@ export default function CountdownTimer({
     </div>
   );
 }
-
