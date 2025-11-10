@@ -88,26 +88,20 @@ export default function LandingSections() {
             <p className="text-sm font-semibold text-slate-700 mb-4">
               The questions they're trying to answer:
             </p>
-            <div className="grid sm:grid-cols-2 gap-3 max-w-3xl mx-auto">
+            <div className="grid gap-3 max-w-3xl mx-auto">
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left">
-                <p className="text-sm text-slate-700">How much time do I have?</p>
+                <p className="text-base font-semibold text-slate-700">How much time do I have?</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left">
-                <p className="text-sm text-slate-700">How long is the runway?</p>
+                <p className="text-base font-semibold text-slate-700">How to extend it?</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left">
-                <p className="text-sm text-slate-700">How to extend it?</p>
+                <p className="text-base font-semibold text-slate-700">How to decrease risk?</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left">
-                <p className="text-sm text-slate-700">How to decrease risk?</p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left sm:col-span-2">
-                <p className="text-sm text-slate-700">
+                <p className="text-base font-semibold text-slate-700">
                   Do they want to go all in or not?
                 </p>
-              </div>
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-left sm:col-span-2">
-                <p className="text-sm text-slate-700">Do they want to take a risk?</p>
               </div>
             </div>
           </div>
