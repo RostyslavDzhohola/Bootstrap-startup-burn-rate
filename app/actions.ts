@@ -23,30 +23,73 @@ export async function saveClock(input: unknown) {
   const validated = saveClockSchema.parse(input);
   const now = new Date().toISOString();
 
-  // Atomic upsert: insert or update on conflict, return id directly
-  const [clock] = await db
-    .insert(clocks)
-    .values({
-      id: randomUUID(),
-      userId,
-      name: validated.name,
-      city: validated.city,
-      runwayEndDate: validated.runwayEndDate,
-      createdAt: now,
-      updatedAt: now,
-    })
-    .onConflictDoUpdate({
-      target: [clocks.userId],
-      set: {
+  // Check if clock exists for this user
+  const existingClock = await db
+    .select({ id: clocks.id })
+    .from(clocks)
+    .where(eq(clocks.userId, userId))
+    .limit(1);
+
+  if (existingClock.length > 0) {
+    // Update existing clock
+    const [updated] = await db
+      .update(clocks)
+      .set({
         name: validated.name,
         city: validated.city,
         runwayEndDate: validated.runwayEndDate,
         updatedAt: now,
-      },
-    })
-    .returning({ id: clocks.id });
+      })
+      .where(eq(clocks.userId, userId))
+      .returning({ id: clocks.id });
 
-  return { id: clock.id };
+    return { id: updated.id };
+  } else {
+    // Insert new clock
+    // Handle race condition: if another request inserts simultaneously,
+    // catch the unique constraint violation and update instead
+    try {
+      const [newClock] = await db
+        .insert(clocks)
+        .values({
+          id: randomUUID(),
+          userId,
+          name: validated.name,
+          city: validated.city,
+          runwayEndDate: validated.runwayEndDate,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning({ id: clocks.id });
+
+      return { id: newClock.id };
+    } catch (error: unknown) {
+      // If unique constraint violation, update instead
+      if (
+        error &&
+        typeof error === "object" &&
+        "code" in error &&
+        (error.code === "SQLITE_CONSTRAINT_UNIQUE" ||
+          error.code === "SQLITE_CONSTRAINT" ||
+          (typeof error.code === "string" && error.code.includes("UNIQUE")))
+      ) {
+        const [updated] = await db
+          .update(clocks)
+          .set({
+            name: validated.name,
+            city: validated.city,
+            runwayEndDate: validated.runwayEndDate,
+            updatedAt: now,
+          })
+          .where(eq(clocks.userId, userId))
+          .returning({ id: clocks.id });
+
+        return { id: updated.id };
+      }
+      // Re-throw if it's a different error
+      throw error;
+    }
+  }
 }
 
 export async function getClock(id: string) {
