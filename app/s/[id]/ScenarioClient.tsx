@@ -112,9 +112,9 @@ export default function ScenarioPage({
 
   return (
     <div className="h-[calc(100vh-4rem)] bg-linear-to-br from-slate-50 via-white to-blue-50 flex items-center justify-center overflow-hidden">
-      <div className="max-w-5xl w-full px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-5xl px-4 sm:px-6 lg:px-8 flex flex-col items-center justify-center">
         {/* Calculator Focus */}
-        <div className="text-center space-y-6">
+        <div className="text-center space-y-6 w-full">
           <h1 className="text-4xl sm:text-5xl font-bold leading-tight">
             <span className="relative inline-block">
               {/* Glow shadow layer */}
@@ -132,11 +132,11 @@ export default function ScenarioPage({
           </h1>
 
           {/* Prominent Countdown Timer - Always Visible */}
-          <div className="relative mx-auto w-full">
+          <div className="relative mx-auto w-full flex justify-center">
             {/* Glow effect behind */}
             <div className="absolute inset-0 bg-linear-to-br from-red-600/20 via-orange-600/20 to-red-800/20 blur-3xl rounded-3xl -z-10"></div>
 
-            <div className="bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl p-6 sm:p-8 border-2 border-red-500/50 shadow-2xl relative">
+            <div className="bg-linear-to-br from-slate-900 via-red-950 to-slate-900 rounded-2xl p-6 sm:p-8 border-2 border-red-500/50 shadow-2xl relative w-full">
               {/* End date label in top-right corner */}
               {endDate && (
                 <div className="absolute top-4 right-4 text-xs text-slate-400 font-medium">

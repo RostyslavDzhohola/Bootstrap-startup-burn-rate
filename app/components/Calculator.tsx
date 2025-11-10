@@ -15,6 +15,7 @@ import InputSection from "./calculator/InputSection";
 import ResultsSidebar from "./calculator/ResultsSidebar";
 import LandingSections from "./calculator/LandingSections";
 import SavedClocksIndicator from "./SavedClocksIndicator";
+import Footer from "./Footer";
 
 export default function Calculator() {
   const { isSignedIn } = useUser();
@@ -318,7 +319,7 @@ export default function Calculator() {
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-blue-50">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 via-white to-blue-50 pt-16">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-10">
         {/* Calculator Focus */}
         <div className="text-center space-y-8">
@@ -464,6 +465,9 @@ export default function Calculator() {
 
         <LandingSections />
       </div>
+
+      {/* Footer */}
+      <Footer />
 
       {/* Saved Clocks Indicator */}
       <SavedClocksIndicator />
