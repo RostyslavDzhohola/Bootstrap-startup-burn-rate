@@ -12,10 +12,16 @@ CREATE TABLE `clocks_new` (
 );
 --> statement-breakpoint
 -- Step 2: Copy data from old table (filter out rows with NULL userId)
+-- Deduplicate: keep only the most recent clock per user (by updatedAt)
 INSERT INTO `clocks_new` (`id`, `userId`, `name`, `city`, `runwayEndDate`, `createdAt`, `updatedAt`)
 SELECT `id`, `userId`, `name`, `city`, `runwayEndDate`, `createdAt`, `updatedAt`
-FROM `clocks`
-WHERE `userId` IS NOT NULL;
+FROM (
+	SELECT `id`, `userId`, `name`, `city`, `runwayEndDate`, `createdAt`, `updatedAt`,
+		ROW_NUMBER() OVER (PARTITION BY `userId` ORDER BY `updatedAt` DESC) as rn
+	FROM `clocks`
+	WHERE `userId` IS NOT NULL
+)
+WHERE rn = 1;
 --> statement-breakpoint
 -- Step 3: Drop old table
 DROP TABLE `clocks`;

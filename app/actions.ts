@@ -23,8 +23,8 @@ export async function saveClock(input: unknown) {
   const validated = saveClockSchema.parse(input);
   const now = new Date().toISOString();
 
-  // Atomic upsert: insert or update on conflict
-  await db
+  // Atomic upsert: insert or update on conflict, return id directly
+  const [clock] = await db
     .insert(clocks)
     .values({
       id: randomUUID(),
@@ -43,14 +43,8 @@ export async function saveClock(input: unknown) {
         runwayEndDate: validated.runwayEndDate,
         updatedAt: now,
       },
-    });
-
-  // Fetch the clock ID after upsert
-  const [clock] = await db
-    .select({ id: clocks.id })
-    .from(clocks)
-    .where(eq(clocks.userId, userId))
-    .limit(1);
+    })
+    .returning({ id: clocks.id });
 
   return { id: clock.id };
 }
