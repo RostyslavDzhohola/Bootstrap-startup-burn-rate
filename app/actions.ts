@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { db, ensureDbMigrated } from "@/lib/db";
 import { clocks } from "@/db/schema";
 import { z } from "zod";
-import { eq, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
 const saveClockSchema = z.object({
@@ -21,31 +21,38 @@ export async function saveClock(input: unknown) {
   }
 
   const validated = saveClockSchema.parse(input);
-  const clockId = randomUUID();
   const now = new Date().toISOString();
 
-  // Delete all existing clocks for this user to ensure only one clock at a time
-  const existingClocks = await db
+  // Atomic upsert: insert or update on conflict
+  await db
+    .insert(clocks)
+    .values({
+      id: randomUUID(),
+      userId,
+      name: validated.name,
+      city: validated.city,
+      runwayEndDate: validated.runwayEndDate,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [clocks.userId],
+      set: {
+        name: validated.name,
+        city: validated.city,
+        runwayEndDate: validated.runwayEndDate,
+        updatedAt: now,
+      },
+    });
+
+  // Fetch the clock ID after upsert
+  const [clock] = await db
     .select({ id: clocks.id })
     .from(clocks)
-    .where(eq(clocks.userId, userId));
+    .where(eq(clocks.userId, userId))
+    .limit(1);
 
-  for (const existing of existingClocks) {
-    await db.delete(clocks).where(eq(clocks.id, existing.id));
-  }
-
-  // Insert new clock
-  await db.insert(clocks).values({
-    id: clockId,
-    userId,
-    name: validated.name,
-    city: validated.city,
-    runwayEndDate: validated.runwayEndDate,
-    createdAt: now,
-    updatedAt: now,
-  });
-
-  return { id: clockId };
+  return { id: clock.id };
 }
 
 export async function getClock(id: string) {
@@ -84,14 +91,15 @@ export async function getPublicClock(id: string) {
   return clock;
 }
 
-export async function getUserClocks() {
+export async function getUserClock() {
   await ensureDbMigrated();
   const { userId } = await auth();
   if (!userId) {
     throw new Error("Unauthorized");
   }
 
-  const userClocks = await db
+  // Return single clock per user (enforced by saveClock)
+  const [userClock] = await db
     .select({
       id: clocks.id,
       name: clocks.name,
@@ -99,7 +107,7 @@ export async function getUserClocks() {
     })
     .from(clocks)
     .where(eq(clocks.userId, userId))
-    .orderBy(desc(clocks.createdAt));
+    .limit(1);
 
-  return userClocks;
+  return userClock || null;
 }

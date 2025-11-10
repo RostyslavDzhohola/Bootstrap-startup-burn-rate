@@ -1,0 +1,80 @@
+---
+alwaysApply: true
+---
+
+# SQLite and Drizzle ORM Migration Rules
+
+## Critical: SQLite ALTER COLUMN Limitations
+
+**SQLite does NOT support `ALTER COLUMN` statements.** Drizzle ORM and drizzle-kit do not generate `ALTER COLUMN` syntax for SQLite. When schema changes require modifying column constraints (like adding NOT NULL, changing types, etc.), Drizzle Kit uses a **table recreation strategy**.
+
+### Table Recreation Pattern for SQLite Column Changes
+
+When modifying column constraints in SQLite, use this pattern:
+
+1. **Create new table** with the desired schema
+2. **Copy data** from old table to new table (with appropriate filtering/transformation)
+3. **Drop old table**
+4. **Rename new table** to original name
+5. **Recreate indexes/constraints** on the new table
+
+### Example: Adding NOT NULL Constraint
+
+```sql
+-- ❌ WRONG: SQLite doesn't support this
+ALTER TABLE `clocks` ALTER COLUMN "userId" TO "userId" text NOT NULL;
+
+-- ✅ CORRECT: Table recreation pattern
+CREATE TABLE `clocks_new` (
+	`id` text PRIMARY KEY NOT NULL,
+	`userId` text NOT NULL,  -- Now NOT NULL
+	`name` text NOT NULL,
+	-- ... other columns
+);
+--> statement-breakpoint
+INSERT INTO `clocks_new` (`id`, `userId`, `name`, ...)
+SELECT `id`, `userId`, `name`, ...
+FROM `clocks`
+WHERE `userId` IS NOT NULL;  -- Filter out invalid data
+--> statement-breakpoint
+DROP TABLE `clocks`;
+--> statement-breakpoint
+ALTER TABLE `clocks_new` RENAME TO `clocks`;
+--> statement-breakpoint
+CREATE UNIQUE INDEX `clocks_userId_unique` ON `clocks` (`userId`);
+```
+
+## Migration Generation Best Practices
+
+1. **Always use `drizzle-kit generate`** to create migrations - never write SQL migrations manually for SQLite schema changes
+2. **Review generated migrations** - Drizzle Kit will automatically use table recreation for SQLite when needed
+3. **Never manually add `ALTER COLUMN`** - This syntax doesn't exist in SQLite
+4. **For data migrations** - Handle data transformation in the INSERT ... SELECT step during table recreation
+
+## Supported SQLite ALTER Operations
+
+SQLite supports a **very limited** set of ALTER TABLE operations:
+
+- ✅ `ALTER TABLE ... RENAME TO` (rename table)
+- ✅ `ALTER TABLE ... ADD COLUMN` (add new column - with limitations)
+- ❌ `ALTER TABLE ... ALTER COLUMN` (NOT SUPPORTED)
+- ❌ `ALTER TABLE ... DROP COLUMN` (requires table recreation)
+- ❌ `ALTER TABLE ... MODIFY COLUMN` (NOT SUPPORTED)
+
+## Drizzle Kit Configuration
+
+Ensure `drizzle.config.ts` specifies the correct dialect:
+
+```typescript
+export default defineConfig({
+  dialect: "sqlite", // or "turso" for Turso
+  schema: "./db/schema.ts",
+  out: "./drizzle",
+});
+```
+
+## References
+
+- Drizzle ORM SQLite Documentation: https://orm.drizzle.team/docs/column-types/sqlite
+- SQLite ALTER TABLE: https://www.sqlite.org/lang_altertable.html
+- Drizzle Kit Migrations: https://orm.drizzle.team/docs/migrations

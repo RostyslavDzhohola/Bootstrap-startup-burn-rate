@@ -38,7 +38,9 @@ function getRunwayColor(runwayDays: number) {
   return "text-green-400";
 }
 
-function getRiskColor(riskLevel: "low" | "sweet" | "risky" | "maybe" | "critical") {
+function getRiskColor(
+  riskLevel: "low" | "sweet" | "risky" | "maybe" | "critical"
+) {
   switch (riskLevel) {
     case "low":
       return { text: "text-green-400", border: "border-green-400/30" };
@@ -55,7 +57,9 @@ function getRiskColor(riskLevel: "low" | "sweet" | "risky" | "maybe" | "critical
   }
 }
 
-function getRiskLabel(riskLevel: "low" | "sweet" | "risky" | "maybe" | "critical") {
+function getRiskLabel(
+  riskLevel: "low" | "sweet" | "risky" | "maybe" | "critical"
+) {
   switch (riskLevel) {
     case "low":
       return "Go all-in";
@@ -136,14 +140,20 @@ export default function ResultsSidebar({
               </div>
             </div>
           </div>
-          
+
           {/* Runway - Months and Days side by side */}
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 hover:bg-white/15 transition-colors">
-            <div className="text-xs font-medium text-slate-300 mb-0.5">Runway</div>
+            <div className="text-xs font-medium text-slate-300 mb-0.5">
+              Runway
+            </div>
             <div className="flex items-baseline gap-3">
               {isFinite(runwayDays) && runwayDays > 0 ? (
                 <>
-                  <div className={`text-xl font-bold ${getRunwayColor(runwayDays)}`}>
+                  <div
+                    className={`text-xl font-bold ${getRunwayColor(
+                      runwayDays
+                    )}`}
+                  >
                     {Math.floor(runwayDays / 30)} months
                   </div>
                   <div className="text-sm text-slate-400">
@@ -155,7 +165,7 @@ export default function ResultsSidebar({
               )}
             </div>
           </div>
-          
+
           {/* Runway End Date */}
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20 hover:bg-white/15 transition-colors">
             <div className="text-xs font-medium text-slate-300 mb-0.5">
@@ -180,8 +190,14 @@ export default function ResultsSidebar({
           )}
           <p className="text-xs leading-relaxed">{financialSummary}</p>
         </div>
-        <div className={`rounded-lg border ${getRiskColor(riskLevel).border} bg-white/5 p-3 text-slate-200 space-y-2`}>
-          <h3 className={`text-xs font-semibold ${getRiskColor(riskLevel).text}`}>
+        <div
+          className={`rounded-lg border ${
+            getRiskColor(riskLevel).border
+          } bg-white/5 p-3 text-slate-200 space-y-2`}
+        >
+          <h3
+            className={`text-xs font-semibold ${getRiskColor(riskLevel).text}`}
+          >
             Decision compass
           </h3>
           <p className="text-xs leading-relaxed">
@@ -199,11 +215,10 @@ export default function ResultsSidebar({
           {isSaving
             ? "Saving..."
             : isSignedIn
-            ? "Save Scenario"
+            ? "Save Clock"
             : "Sign in to save the countdown"}
         </button>
       </div>
     </div>
   );
 }
-

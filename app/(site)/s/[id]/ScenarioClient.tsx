@@ -133,38 +133,6 @@ export default function ScenarioPage({
                   </p>
                 </div>
 
-                {/* Compact & Transparent for Notion */}
-                <div className="bg-slate-800 rounded-lg p-4 text-left">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs text-slate-400 font-semibold">
-                      For Notion (Compact & Transparent)
-                    </span>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(
-                          generateEmbedUrl({
-                            transparent: true,
-                            compact: true,
-                          })
-                        );
-                        toast.success(
-                          "Embed URL copied! Paste into Notion's embed block."
-                        );
-                      }}
-                      className="text-xs text-red-400 hover:text-red-300"
-                    >
-                      Copy URL
-                    </button>
-                  </div>
-                  <code className="text-xs text-slate-300 break-all block mb-2">
-                    {generateEmbedUrl({ transparent: true, compact: true })}
-                  </code>
-                  <p className="text-xs text-slate-500 mt-2">
-                    In Notion: Type &quot;/embed&quot; → Paste this URL → Press
-                    Enter
-                  </p>
-                </div>
-
                 {/* HTML iframe for websites */}
                 <div className="bg-slate-800 rounded-lg p-4 text-left">
                   <div className="flex justify-between items-center mb-2">
@@ -204,4 +172,3 @@ export default function ScenarioPage({
     </div>
   );
 }
-

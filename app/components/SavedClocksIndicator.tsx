@@ -4,15 +4,17 @@ import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { FaClock } from "react-icons/fa";
-import { getUserClocks } from "@/app/actions";
+import { getUserClock } from "@/app/actions";
 
 export default function SavedClocksIndicator() {
   const { isSignedIn } = useUser();
   const router = useRouter();
   const pathname = usePathname();
-  const [scenarios, setScenarios] = useState<
-    Array<{ id: string; name: string; runwayEndDate: string | null }>
-  >([]);
+  const [scenario, setScenario] = useState<{
+    id: string;
+    name: string;
+    runwayEndDate: string | null;
+  } | null>(null);
   const [showTooltip, setShowTooltip] = useState(false);
 
   useEffect(() => {
@@ -20,27 +22,26 @@ export default function SavedClocksIndicator() {
       return;
     }
 
-    const fetchClocks = async () => {
+    const fetchClock = async () => {
       try {
-        const userClocks = await getUserClocks();
-        setScenarios(userClocks);
+        const userClock = await getUserClock();
+        setScenario(userClock);
       } catch (error) {
-        console.error("Failed to fetch clocks:", error);
+        console.error("Failed to fetch clock:", error);
       }
     };
 
-    fetchClocks();
+    fetchClock();
   }, [isSignedIn]);
 
   const handleClick = () => {
-    if (scenarios.length > 0) {
-      // Navigate to the most recent clock (first in the list)
-      router.push(`/s/${scenarios[0].id}`);
+    if (scenario) {
+      router.push(`/s/${scenario.id}`);
     }
   };
 
   // Only show on home page
-  if (pathname !== "/" || !isSignedIn || scenarios.length === 0) {
+  if (pathname !== "/" || !isSignedIn || !scenario) {
     return null;
   }
 

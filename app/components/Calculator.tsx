@@ -9,7 +9,7 @@ import {
   computeRunwayEndDate,
   sumMonthlyCents,
 } from "@/lib/calc";
-import { saveClock, getUserClocks } from "@/app/actions";
+import { saveClock, getUserClock } from "@/app/actions";
 import { Expense, Income } from "./calculator/types";
 import InputSection from "./calculator/InputSection";
 import ResultsSidebar from "./calculator/ResultsSidebar";
@@ -112,9 +112,9 @@ export default function Calculator() {
 
     const fetchSavedClock = async () => {
       try {
-        const userClocks = await getUserClocks();
-        if (userClocks.length > 0 && userClocks[0].runwayEndDate) {
-          setSavedClockEndDate(userClocks[0].runwayEndDate);
+        const userClock = await getUserClock();
+        if (userClock?.runwayEndDate) {
+          setSavedClockEndDate(userClock.runwayEndDate);
         } else {
           setSavedClockEndDate(null);
         }
@@ -246,9 +246,9 @@ export default function Calculator() {
 
     setIsSaving(true);
     try {
-      const scenarioName = trimmedCity
+      const clockName = trimmedCity
         ? `Runway - ${trimmedCity}`
-        : `Burn Rate Scenario - ${new Date().toLocaleDateString()}`;
+        : `Burn Rate Clock - ${new Date().toLocaleDateString()}`;
 
       // Calculate and save runway end date
       const endDateISO = runwayEndDate
@@ -256,15 +256,15 @@ export default function Calculator() {
         : undefined;
 
       const result = await saveClock({
-        name: scenarioName,
+        name: clockName,
         city: trimmedCity || undefined,
         runwayEndDate: endDateISO,
       });
 
       router.push(`/s/${result.id}`);
     } catch (error) {
-      console.error("Failed to save scenario:", error);
-      alert("Failed to save scenario. Please try again.");
+      console.error("Failed to save clock:", error);
+      alert("Failed to save clock. Please try again.");
     } finally {
       setIsSaving(false);
     }
