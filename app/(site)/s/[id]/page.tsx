@@ -20,3 +20,4 @@ export default async function ScenarioServerPage({
 
   return <ScenarioPage scenario={clock} isSignedIn={!!userId} />;
 }
+

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
-import Header from "./components/Header";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,6 +7,11 @@ export const metadata: Metadata = {
   description: "Calculate your startup burn rate and runway",
 };
 
+/**
+ * Root layout - minimal structure.
+ * Site-specific styling (Header, background) is handled by (site)/layout.tsx
+ * Embed routes use their own layout.tsx
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -16,11 +20,7 @@ export default function RootLayout({
   return (
     <ClerkProvider appearance={{ cssLayerName: "clerk" }}>
       <html lang="en" suppressHydrationWarning className="h-full">
-        <body
-          className="antialiased min-h-screen h-full bg-linear-to-br from-slate-50 via-white to-blue-50"
-          suppressHydrationWarning
-        >
-          <Header />
+        <body className="antialiased" suppressHydrationWarning>
           {children}
         </body>
       </html>
