@@ -148,3 +148,34 @@ export async function getUserClock() {
 
   return userClock || null;
 }
+
+export async function resetClock(id: string) {
+  await ensureDbMigrated();
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("Unauthorized");
+  }
+
+  // Verify the clock belongs to the user
+  const [clock] = await db
+    .select({ userId: clocks.userId })
+    .from(clocks)
+    .where(eq(clocks.id, id))
+    .limit(1);
+
+  if (!clock || clock.userId !== userId) {
+    throw new Error("Clock not found or unauthorized");
+  }
+
+  // Reset the clock by clearing runwayEndDate and city
+  await db
+    .update(clocks)
+    .set({
+      runwayEndDate: null,
+      city: null,
+      updatedAt: new Date().toISOString(),
+    })
+    .where(eq(clocks.id, id));
+
+  return { success: true };
+}
