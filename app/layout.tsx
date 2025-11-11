@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,6 +21,15 @@ export default function RootLayout({
   return (
     <ClerkProvider appearance={{ cssLayerName: "clerk" }}>
       <html lang="en" suppressHydrationWarning className="h-full">
+        <head>
+          <Script
+            defer
+            data-website-id="dfid_qiYc6tCjMD2lRZkfylWl9"
+            data-domain="bootstrap-startup-burn-rate.vercel.app"
+            src="https://datafa.st/js/script.js"
+            strategy="afterInteractive"
+          />
+        </head>
         <body
           className="antialiased m-0 p-0"
           suppressHydrationWarning
