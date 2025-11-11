@@ -45,7 +45,7 @@ export default function Footer() {
               aria-label="Email"
             >
               <FaEnvelope className="w-4 h-4" />
-              <span>Contact</span>
+              <span>brutal feedback</span>
             </a>
 
             {/* Social Media Links */}
